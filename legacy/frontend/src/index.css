@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+@layer base {
+  body {
+    @apply antialiased;
+  }
+}
+
+@layer components {
+  .glass-panel {
+    @apply bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl;
+  }
+  
+  .btn-primary {
+    @apply px-4 py-2 bg-dryft-beige text-dryft-dark font-semibold rounded-lg hover:bg-white transition-colors duration-200;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-dryft-beige/50 text-white placeholder-white/40;
+  }
+}
