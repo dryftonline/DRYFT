@@ -14,12 +14,17 @@ import {
   CheckCheck,
   User,
   Store,
-  Package
+  Package,
+  Send,
+  X,
+  AlertTriangle,
+  Megaphone
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 export default function NotificationsPage() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [showBroadcastModal, setShowBroadcastModal] = useState(false);
   
   // Mock Notifications
   const [notifications, setNotifications] = useState([
@@ -105,13 +110,22 @@ export default function NotificationsPage() {
           <h1 className="text-2xl font-bold text-white">Notifications</h1>
           <p className="text-white/40 text-sm">Stay updated with system activities and alerts.</p>
         </div>
-        <button 
-          onClick={markAllRead}
-          className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white/60 hover:text-white flex items-center gap-2 transition-all text-sm font-medium"
-        >
-          <CheckCheck size={18} />
-          <span>Mark all as read</span>
-        </button>
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => setShowBroadcastModal(true)}
+            className="btn-primary flex items-center gap-2"
+          >
+            <Send size={18} />
+            <span>Send Notification</span>
+          </button>
+          <button 
+            onClick={markAllRead}
+            className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white/60 hover:text-white flex items-center gap-2 transition-all text-sm font-medium"
+          >
+            <CheckCheck size={18} />
+            <span>Mark all as read</span>
+          </button>
+        </div>
       </div>
 
       {/* Filters & Search */}
@@ -189,16 +203,72 @@ export default function NotificationsPage() {
           );
         })}
 
-        {notifications.length === 0 && (
-          <div className="glass-panel py-20 text-center">
-            <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4 text-white/20">
-              <Bell size={32} />
-            </div>
-            <h3 className="text-white font-bold">All clear!</h3>
-            <p className="text-white/40 text-sm">No new notifications to display.</p>
-          </div>
-        )}
       </div>
+
+      {/* Broadcast Notification Modal */}
+      {showBroadcastModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="glass-panel w-full max-w-xl p-8 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-dryft-beige/10 text-dryft-beige rounded-lg">
+                  <Megaphone size={20} />
+                </div>
+                <h2 className="text-xl font-bold text-white">Broadcast Notification</h2>
+              </div>
+              <button onClick={() => setShowBroadcastModal(false)} className="text-white/40 hover:text-white transition-colors">
+                <X size={24} />
+              </button>
+            </div>
+
+            <form className="space-y-6" onSubmit={(e) => {
+              e.preventDefault();
+              toast.success('Broadcast notification sent successfully!');
+              setShowBroadcastModal(false);
+            }}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-white/60">Target Recipient</label>
+                  <select className="input-field bg-dryft-dark">
+                    <option>All Franchises</option>
+                    <option>Downtown Branch</option>
+                    <option>Uptown Premium</option>
+                    <option>Westside Auto</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-white/60">Notification Type</label>
+                  <select className="input-field bg-dryft-dark">
+                    <option>Information</option>
+                    <option>Warning</option>
+                    <option>Urgent Alert</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-white/60">Message Title</label>
+                <input type="text" className="input-field" placeholder="e.g. System Maintenance Tomorrow" required />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-white/60">Message Content</label>
+                <textarea className="input-field min-h-[120px]" placeholder="Type your message to the franchises here..." required></textarea>
+              </div>
+
+              <div className="flex gap-4 pt-4">
+                <button type="button" onClick={() => setShowBroadcastModal(false)} className="flex-1 px-4 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-colors">
+                  Cancel
+                </button>
+                <button type="submit" className="flex-1 btn-primary py-3 flex items-center justify-center gap-2">
+                  <Send size={18} />
+                  <span>Send Broadcast</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

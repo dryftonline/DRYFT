@@ -54,7 +54,7 @@ export default function Franchises() {
                     <ShieldAlert size={10} /> Inactive
                   </span>
                 )}
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="flex items-center gap-1 transition-opacity">
                   <button 
                     onClick={() => setEditingFranchise(f)}
                     className="p-2 hover:bg-white/5 rounded-lg text-white/40 hover:text-dryft-beige transition-colors"

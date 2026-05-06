@@ -57,7 +57,7 @@ export default function UserManagement() {
           className="btn-primary flex items-center gap-2"
         >
           <UserPlus size={18} />
-          <span>Invite New User</span>
+          <span>Create New User</span>
         </button>
       </div>
 
@@ -197,7 +197,7 @@ export default function UserManagement() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
           <div className="glass-panel w-full max-w-lg p-8">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold text-white">Invite New User</h2>
+              <h2 className="text-xl font-bold text-white">Create New User</h2>
               <button onClick={() => setShowAddModal(false)} className="text-white/40 hover:text-white">
                 <X size={24} />
               </button>
@@ -205,15 +205,21 @@ export default function UserManagement() {
 
             <form className="space-y-6" onSubmit={(e) => {
               e.preventDefault();
-              toast.success('Invitation sent to user!');
+              toast.success('User account created successfully!');
               setShowAddModal(false);
             }}>
               <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-white/60">Full Name</label>
-                  <div className="relative">
-                    <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" size={18} />
-                    <input type="text" className="input-field pl-10" placeholder="John Doe" required />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-white/60">Full Name</label>
+                    <div className="relative">
+                      <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" size={18} />
+                      <input type="text" className="input-field pl-10" placeholder="John Doe" required />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-white/60">Username</label>
+                    <input type="text" className="input-field" placeholder="johndoe" required />
                   </div>
                 </div>
 
@@ -222,6 +228,17 @@ export default function UserManagement() {
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" size={18} />
                     <input type="email" className="input-field pl-10" placeholder="john@dryft.com" required />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-white/60">Password</label>
+                    <input type="password" name="password" className="input-field" placeholder="••••••••" required />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-white/60">Confirm Password</label>
+                    <input type="password" name="confirmPassword" className="input-field" placeholder="••••••••" required />
                   </div>
                 </div>
 
@@ -251,7 +268,7 @@ export default function UserManagement() {
                   Cancel
                 </button>
                 <button type="submit" className="flex-1 btn-primary py-3">
-                  Send Invite
+                  Create Account
                 </button>
               </div>
             </form>

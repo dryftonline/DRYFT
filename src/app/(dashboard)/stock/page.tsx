@@ -6,6 +6,7 @@ import { toast } from 'react-hot-toast';
 
 export default function StockUpdates() {
   const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [showAddProductModal, setShowAddProductModal] = useState(false);
   const [selectedFranchise, setSelectedFranchise] = useState<string | null>(null);
   
   const [franchises] = useState([
@@ -58,6 +59,13 @@ export default function StockUpdates() {
           </div>
         </div>
         <div className="flex gap-2">
+          <button 
+            onClick={() => setShowAddProductModal(true)}
+            className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white/60 hover:text-white flex items-center gap-2"
+          >
+            <Plus size={18} />
+            <span>Add Product</span>
+          </button>
           <button className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white/60 hover:text-white flex items-center gap-2">
             <History size={18} />
             <span>History</span>
@@ -250,6 +258,78 @@ export default function StockUpdates() {
                 </button>
                 <button type="submit" className="flex-1 btn-primary py-3">
                   Submit Update
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add New Product Modal */}
+      {showAddProductModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="glass-panel w-full max-w-xl p-8 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-dryft-beige/10 text-dryft-beige rounded-lg">
+                  <Box size={20} />
+                </div>
+                <h2 className="text-xl font-bold text-white">Add New Product SKU</h2>
+              </div>
+              <button onClick={() => setShowAddProductModal(false)} className="text-white/40 hover:text-white transition-colors">
+                <X size={24} />
+              </button>
+            </div>
+
+            <form className="space-y-6" onSubmit={(e) => {
+              e.preventDefault();
+              toast.success('New product SKU added to system!');
+              setShowAddProductModal(false);
+            }}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-white/60">Product Name</label>
+                  <input type="text" className="input-field" placeholder="e.g. Premium Wax (2L)" required />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-white/60">Category</label>
+                  <select className="input-field bg-dryft-dark">
+                    <option>Chemicals</option>
+                    <option>Tools & Equipment</option>
+                    <option>Cleaning Supplies</option>
+                    <option>Accessories</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-white/60">Initial Quantity</label>
+                  <input type="number" className="input-field" placeholder="0" required />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-white/60">Low Stock Threshold</label>
+                  <input type="number" className="input-field" placeholder="10" required />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-white/60">Assigned Franchises</label>
+                <div className="grid grid-cols-2 gap-3 p-4 bg-white/5 border border-white/10 rounded-xl">
+                  {['Downtown', 'Uptown', 'Westside', 'Eastbay'].map((f) => (
+                    <label key={f} className="flex items-center gap-3 cursor-pointer group">
+                      <input type="checkbox" className="w-4 h-4 rounded border-white/10 bg-white/5 text-dryft-beige focus:ring-dryft-beige/20" />
+                      <span className="text-sm text-white/60 group-hover:text-white transition-colors">{f}</span>
+                    </label>
+                  ))}
+                </div>
+                <p className="text-[10px] text-white/20 mt-1 italic">* Product will be initialized in these branches with the specified quantity.</p>
+              </div>
+
+              <div className="flex gap-4 pt-4">
+                <button type="button" onClick={() => setShowAddProductModal(false)} className="flex-1 px-4 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-colors">
+                  Cancel
+                </button>
+                <button type="submit" className="flex-1 btn-primary py-3 flex items-center justify-center gap-2">
+                  <Plus size={18} />
+                  <span>Register Product</span>
                 </button>
               </div>
             </form>
