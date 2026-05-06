@@ -46,8 +46,15 @@ export async function POST(request: Request) {
         franchiseId: user.franchiseId
       }
     });
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  } catch (error: any) {
+    console.error('Login Error:', error);
+    // Log specific details if available
+    if (error.code) console.error('Error Code:', error.code);
+    if (error.message) console.error('Error Message:', error.message);
+    
+    return NextResponse.json(
+      { error: 'Internal server error', details: error.message }, 
+      { status: 500 }
+    );
   }
 }

@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -12,26 +9,26 @@ datasource db {
 }
 
 model User {
-  id            Int       @id @default(autoincrement())
-  username      String    @unique
-  passwordHash  String
-  roleId        Int
-  role          Role      @relation(fields: [roleId], references: [id])
-  franchiseId   Int?
-  franchise     Franchise? @relation(fields: [franchiseId], references: [id])
-  status        String    @default("active") // active, inactive
-  created_at    DateTime  @default(now())
-  updated_at    DateTime  @updatedAt
-  uploadedCustomers Customer[] @relation("UploadedBy")
-  stockLogs     StockUpdateLog[]
+  id                Int              @id @default(autoincrement())
+  username          String           @unique
+  passwordHash      String
+  roleId            Int
+  franchiseId       Int?
+  status            String           @default("active")
+  created_at        DateTime         @default(now())
+  updated_at        DateTime         @updatedAt
+  uploadedCustomers Customer[]       @relation("UploadedBy")
   sentNotifications Notification[]
+  stockLogs         StockUpdateLog[]
+  franchise         Franchise?       @relation(fields: [franchiseId], references: [id])
+  role              Role             @relation(fields: [roleId], references: [id])
 }
 
 model Role {
-  id          Int       @id @default(autoincrement())
-  name        String    @unique
-  users       User[]
+  id          Int              @id @default(autoincrement())
+  name        String           @unique
   permissions RolePermission[]
+  users       User[]
 }
 
 model Permission {
@@ -43,26 +40,26 @@ model Permission {
 model RolePermission {
   roleId       Int
   permissionId Int
-  role         Role       @relation(fields: [roleId], references: [id])
   permission   Permission @relation(fields: [permissionId], references: [id])
+  role         Role       @relation(fields: [roleId], references: [id])
 
   @@id([roleId, permissionId])
 }
 
 model Franchise {
-  id           Int       @id @default(autoincrement())
-  name         String
-  ownerName    String
-  phoneNumber  String
-  email        String
-  location     String
-  status       String    @default("active") // active, inactive
-  created_at   DateTime  @default(now())
-  updated_at   DateTime  @updatedAt
-  users        User[]
-  customers    Customer[]
-  stockItems   FranchiseStock[]
+  id            Int                     @id @default(autoincrement())
+  name          String
+  ownerName     String
+  phoneNumber   String
+  email         String
+  location      String
+  status        String                  @default("active")
+  created_at    DateTime                @default(now())
+  updated_at    DateTime                @updatedAt
+  customers     Customer[]
+  stockItems    FranchiseStock[]
   notifications NotificationRecipient[]
+  users         User[]
 }
 
 model Customer {
@@ -73,31 +70,31 @@ model Customer {
   carRegistration String
   carModel        String
   franchiseId     Int
-  franchise       Franchise @relation(fields: [franchiseId], references: [id])
   uploadedBy      Int
-  uploader        User      @relation("UploadedBy", fields: [uploadedBy], references: [id])
   notes           String?
-  status          String    @default("pending") // pending, completed
+  status          String    @default("pending")
   created_at      DateTime  @default(now())
+  franchise       Franchise @relation(fields: [franchiseId], references: [id])
+  uploader        User      @relation("UploadedBy", fields: [uploadedBy], references: [id])
 }
 
 model StockItem {
-  id              Int       @id @default(autoincrement())
-  name            String    @unique
-  defaultQuantity Int       @default(0)
+  id              Int              @id @default(autoincrement())
+  name            String           @unique
+  defaultQuantity Int              @default(0)
   franchiseStocks FranchiseStock[]
 }
 
 model FranchiseStock {
-  id                Int       @id @default(autoincrement())
+  id                Int              @id @default(autoincrement())
   franchiseId       Int
-  franchise         Franchise @relation(fields: [franchiseId], references: [id])
   stockItemId       Int
-  stockItem         StockItem @relation(fields: [stockItemId], references: [id])
-  availableQuantity Int       @default(0)
-  lowStockThreshold Int       @default(10)
+  availableQuantity Int              @default(0)
+  lowStockThreshold Int              @default(10)
   lastUpdatedBy     Int?
-  updated_at        DateTime  @updatedAt
+  updated_at        DateTime         @updatedAt
+  franchise         Franchise        @relation(fields: [franchiseId], references: [id])
+  stockItem         StockItem        @relation(fields: [stockItemId], references: [id])
   logs              StockUpdateLog[]
 
   @@unique([franchiseId, stockItemId])
@@ -106,31 +103,31 @@ model FranchiseStock {
 model StockUpdateLog {
   id               Int            @id @default(autoincrement())
   franchiseStockId Int
-  franchiseStock   FranchiseStock @relation(fields: [franchiseStockId], references: [id])
   previousQuantity Int
   newQuantity      Int
   userId           Int
-  user             User           @relation(fields: [userId], references: [id])
   created_at       DateTime       @default(now())
+  franchiseStock   FranchiseStock @relation(fields: [franchiseStockId], references: [id])
+  user             User           @relation(fields: [userId], references: [id])
 }
 
 model Notification {
-  id         Int       @id @default(autoincrement())
+  id         Int                     @id @default(autoincrement())
   title      String
   message    String
-  priority   String    @default("Normal") // Normal, Important, Urgent
-  targetType String    @default("All") // All, Selected
+  priority   String                  @default("Normal")
+  targetType String                  @default("All")
   sentBy     Int
-  sender     User      @relation(fields: [sentBy], references: [id])
-  created_at DateTime  @default(now())
+  created_at DateTime                @default(now())
+  sender     User                    @relation(fields: [sentBy], references: [id])
   recipients NotificationRecipient[]
 }
 
 model NotificationRecipient {
   notificationId Int
-  notification   Notification @relation(fields: [notificationId], references: [id])
   franchiseId    Int
   franchise      Franchise    @relation(fields: [franchiseId], references: [id])
+  notification   Notification @relation(fields: [notificationId], references: [id])
 
   @@id([notificationId, franchiseId])
 }

@@ -9,6 +9,7 @@ import {
   Clock,
   ArrowRight
 } from 'lucide-react';
+import Link from 'next/link';
 import { 
   Chart as ChartJS, 
   CategoryScale, 
@@ -150,10 +151,13 @@ export default function Dashboard() {
               </div>
             ))}
           </div>
-          <button className="mt-8 w-full py-2 border border-white/5 rounded-lg text-xs font-medium text-white/40 hover:bg-white/5 hover:text-white transition-all flex items-center justify-center gap-2 group">
+          <Link 
+            href="/notifications"
+            className="mt-8 w-full py-2 border border-white/5 rounded-lg text-xs font-medium text-white/40 hover:bg-white/5 hover:text-white transition-all flex items-center justify-center gap-2 group"
+          >
             View All Notifications
             <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-          </button>
+          </Link>
         </div>
       </div>
     </div>

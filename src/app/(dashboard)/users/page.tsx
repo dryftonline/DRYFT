@@ -21,6 +21,7 @@ import { toast } from 'react-hot-toast';
 export default function UserManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editingUser, setEditingUser] = useState<any>(null);
   
   // Mock Data
   const [users, setUsers] = useState([
@@ -170,7 +171,12 @@ export default function UserManagement() {
                   <td className="px-6 py-4 text-xs text-white/40">{user.lastLogin}</td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button className="p-2 hover:bg-white/5 rounded-lg text-white/60 hover:text-white"><Edit2 size={16} /></button>
+                      <button 
+                        onClick={() => setEditingUser(user)}
+                        className="p-2 hover:bg-white/5 rounded-lg text-white/60 hover:text-white"
+                      >
+                        <Edit2 size={16} />
+                      </button>
                       <button 
                         onClick={() => handleDelete(user.id)}
                         className="p-2 hover:bg-red-500/10 rounded-lg text-white/60 hover:text-red-500"
@@ -246,6 +252,73 @@ export default function UserManagement() {
                 </button>
                 <button type="submit" className="flex-1 btn-primary py-3">
                   Send Invite
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit User Modal */}
+      {editingUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="glass-panel w-full max-w-lg p-8">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold text-white">Edit User: {editingUser.username}</h2>
+              <button onClick={() => setEditingUser(null)} className="text-white/40 hover:text-white">
+                <X size={24} />
+              </button>
+            </div>
+
+            <form className="space-y-6" onSubmit={(e) => {
+              e.preventDefault();
+              toast.success('User updated successfully!');
+              setEditingUser(null);
+            }}>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-white/60">Full Name</label>
+                  <div className="relative">
+                    <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" size={18} />
+                    <input type="text" className="input-field pl-10" defaultValue={editingUser.username} required />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-white/60">Email Address</label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" size={18} />
+                    <input type="email" className="input-field pl-10" defaultValue={editingUser.email} required />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-white/60">Role</label>
+                    <select className="input-field bg-dryft-dark" defaultValue={editingUser.role}>
+                      <option>Operator</option>
+                      <option>Manager</option>
+                      <option>Super Admin</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-white/60">Franchise</label>
+                    <select className="input-field bg-dryft-dark" defaultValue={editingUser.franchise}>
+                      <option>Downtown</option>
+                      <option>Uptown</option>
+                      <option>Westside</option>
+                      <option>All Access</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-4 pt-4">
+                <button type="button" onClick={() => setEditingUser(null)} className="flex-1 px-4 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-colors">
+                  Cancel
+                </button>
+                <button type="submit" className="flex-1 btn-primary py-3">
+                  Save Changes
                 </button>
               </div>
             </form>

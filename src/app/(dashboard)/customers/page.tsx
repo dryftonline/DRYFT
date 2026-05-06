@@ -18,6 +18,7 @@ import { toast } from 'react-hot-toast';
 export default function Customers() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState<any>(null);
   
   // Mock Data
   const [customers, setCustomers] = useState([
@@ -122,7 +123,12 @@ export default function Customers() {
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button className="p-2 hover:bg-white/5 rounded-lg text-white/60 hover:text-white"><Eye size={16} /></button>
-                      <button className="p-2 hover:bg-white/5 rounded-lg text-white/60 hover:text-white"><Edit2 size={16} /></button>
+                      <button 
+                        onClick={() => setEditingCustomer(customer)}
+                        className="p-2 hover:bg-white/5 rounded-lg text-white/60 hover:text-white"
+                      >
+                        <Edit2 size={16} />
+                      </button>
                       <button 
                         onClick={() => handleDelete(customer.id)}
                         className="p-2 hover:bg-red-500/10 rounded-lg text-white/60 hover:text-red-500"
@@ -216,6 +222,74 @@ export default function Customers() {
                 </button>
                 <button type="submit" className="flex-1 btn-primary py-3">
                   Upload Record
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Customer Modal */}
+      {editingCustomer && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="glass-panel w-full max-w-xl p-8 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold text-white">Edit Customer Record</h2>
+              <button onClick={() => setEditingCustomer(null)} className="text-white/40 hover:text-white">
+                <X size={24} />
+              </button>
+            </div>
+
+            <form className="space-y-6" onSubmit={(e) => {
+              e.preventDefault();
+              toast.success('Customer record updated!');
+              setEditingCustomer(null);
+            }}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-white/60">Customer Name</label>
+                  <input type="text" className="input-field" defaultValue={editingCustomer.name} required />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-white/60">Phone Number</label>
+                  <input type="text" className="input-field" defaultValue={editingCustomer.phone} required />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-white/60">Car Model</label>
+                  <input type="text" className="input-field" defaultValue={editingCustomer.car} required />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-white/60">Registration Number</label>
+                  <input type="text" className="input-field" defaultValue={editingCustomer.plate} required />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-white/60">Franchise Branch</label>
+                  <select className="input-field bg-dryft-dark" defaultValue={editingCustomer.branch}>
+                    <option>Downtown</option>
+                    <option>Uptown</option>
+                    <option>Westside</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-white/60">Car Status</label>
+                  <select className="input-field bg-dryft-dark" defaultValue={editingCustomer.status}>
+                    <option value="pending">Pending</option>
+                    <option value="completed">Completed</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-white/60">Notes</label>
+                <textarea className="input-field min-h-[100px]" placeholder="Add any specific car wash notes here..."></textarea>
+              </div>
+
+              <div className="flex gap-4 pt-4">
+                <button type="button" onClick={() => setEditingCustomer(null)} className="flex-1 px-4 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-colors">
+                  Cancel
+                </button>
+                <button type="submit" className="flex-1 btn-primary py-3">
+                  Save Changes
                 </button>
               </div>
             </form>

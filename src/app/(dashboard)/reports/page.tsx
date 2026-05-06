@@ -25,6 +25,7 @@ import {
   Filler
 } from 'chart.js';
 import { Bar, Line } from 'react-chartjs-2';
+import { toast } from 'react-hot-toast';
 
 ChartJS.register(
   CategoryScale,
@@ -119,7 +120,14 @@ export default function Reports() {
             <span>This Month</span>
             <ChevronDown size={14} />
           </button>
-          <button className="btn-primary flex items-center gap-2">
+          <button 
+            onClick={() => toast.promise(new Promise(r => setTimeout(r, 2000)), {
+              loading: 'Generating PDF report...',
+              success: 'Report exported successfully!',
+              error: 'Failed to generate report',
+            })}
+            className="btn-primary flex items-center gap-2"
+          >
             <Download size={18} />
             <span>Export PDF</span>
           </button>
