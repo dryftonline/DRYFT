@@ -1,25 +1,52 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Plus, MapPin, Phone, Mail, MoreVertical, Store, ShieldCheck, ShieldAlert, X, Edit2, Trash2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 export default function Franchises() {
   const [showAddModal, setShowAddModal] = useState(false);
-  const [franchises, setFranchises] = useState([
-    { id: 1, name: 'DRYFT Downtown', owner: 'Alex Johnson', location: '123 Main St, Central City', phone: '+1 555-0011', email: 'downtown@dryft.com', status: 'active', users: 5 },
-    { id: 2, name: 'DRYFT Uptown', owner: 'Sarah Miller', location: '456 North Ave, Heights', phone: '+1 555-0022', email: 'uptown@dryft.com', status: 'active', users: 3 },
-    { id: 3, name: 'DRYFT Westside', owner: 'Robert Wilson', location: '789 West Blvd, Suburbs', phone: '+1 555-0033', email: 'westside@dryft.com', status: 'inactive', users: 2 },
-  ]);
+  const [editingFranchise, setEditingFranchise] = useState<any>(null);
+  const [franchises, setFranchises] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleDelete = (id: number) => {
-    if (confirm('Are you sure you want to delete this franchise?')) {
-      setFranchises(franchises.filter(f => f.id !== id));
-      toast.success('Franchise deleted successfully');
+  useEffect(() => {
+    fetchFranchises();
+  }, []);
+
+  const fetchFranchises = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch('/api/franchises');
+      const data = await res.json();
+      if (res.ok) {
+        setFranchises(data);
+      } else {
+        toast.error('Failed to load franchises');
+      }
+    } catch (error) {
+      toast.error('Connection error');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const [editingFranchise, setEditingFranchise] = useState<any>(null);
+  const handleDelete = async (id: number) => {
+    if (confirm('Are you sure you want to delete this franchise? This action cannot be undone.')) {
+      try {
+        const res = await fetch(`/api/franchises/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+          setFranchises(franchises.filter(f => f.id !== id));
+          toast.success('Franchise deleted permanently');
+        } else {
+          const data = await res.json();
+          toast.error(data.error || 'Failed to delete');
+        }
+      } catch (error) {
+        toast.error('An error occurred');
+      }
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -75,7 +102,7 @@ export default function Franchises() {
 
             <h3 className="text-lg font-bold text-white mb-1">{f.name}</h3>
             <p className="text-sm text-white/40 mb-4 flex items-center gap-2">
-              Owner: <span className="text-white/80">{f.owner}</span>
+              Owner: <span className="text-white/80">{f.ownerName}</span>
             </p>
 
             <div className="space-y-3 pt-4 border-t border-white/5">
@@ -85,7 +112,7 @@ export default function Franchises() {
               </div>
               <div className="flex items-center gap-3 text-sm text-white/60">
                 <Phone size={16} className="text-white/20" />
-                <span>{f.phone}</span>
+                <span>{f.phoneNumber}</span>
               </div>
               <div className="flex items-center gap-3 text-sm text-white/60">
                 <Mail size={16} className="text-white/20" />
@@ -95,7 +122,7 @@ export default function Franchises() {
 
             <div className="mt-6 pt-6 border-t border-white/5 flex items-center justify-between">
               <div className="text-xs text-white/40">
-                <span className="text-white font-semibold">{f.users}</span> Users Assigned
+                <span className="text-white font-semibold">{f._count?.users || 0}</span> Users Assigned
               </div>
               <button className="text-xs font-semibold text-dryft-beige hover:text-white transition-colors">
                 View Details
@@ -116,33 +143,52 @@ export default function Franchises() {
               </button>
             </div>
 
-            <form className="space-y-6" onSubmit={(e) => {
+            <form className="space-y-6" onSubmit={async (e) => {
               e.preventDefault();
-              toast.success('Franchise created successfully!');
-              setShowAddModal(false);
+              const formData = new FormData(e.currentTarget);
+              const data = {
+                name: formData.get('name'),
+                ownerName: formData.get('ownerName'),
+                phoneNumber: formData.get('phoneNumber'),
+                email: formData.get('email'),
+                location: formData.get('location'),
+              };
+              try {
+                const res = await fetch('/api/franchises', {
+                  method: 'POST',
+                  body: JSON.stringify(data),
+                });
+                if (res.ok) {
+                  toast.success('Franchise created successfully!');
+                  setShowAddModal(false);
+                  fetchFranchises();
+                }
+              } catch (error) {
+                toast.error('Failed to create franchise');
+              }
             }}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-white/60">Franchise Name</label>
-                  <input type="text" className="input-field" placeholder="e.g. DRYFT Eastbay" required />
+                  <input type="text" name="name" className="input-field" placeholder="e.g. DRYFT Eastbay" required />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-white/60">Owner Name</label>
-                  <input type="text" className="input-field" placeholder="Full Name" required />
+                  <input type="text" name="ownerName" className="input-field" placeholder="Full Name" required />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-white/60">Phone Number</label>
-                  <input type="text" className="input-field" placeholder="+1..." required />
+                  <input type="text" name="phoneNumber" className="input-field" placeholder="+1..." required />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-white/60">Email Address</label>
-                  <input type="email" className="input-field" placeholder="branch@dryft.com" required />
+                  <input type="email" name="email" className="input-field" placeholder="branch@dryft.com" required />
                 </div>
               </div>
 
               <div className="space-y-2">
                 <label className="text-sm font-medium text-white/60">Location / Address</label>
-                <textarea className="input-field min-h-[80px]" placeholder="Full street address..." required></textarea>
+                <textarea name="location" className="input-field min-h-[80px]" placeholder="Full street address..." required></textarea>
               </div>
 
               <div className="flex gap-4 pt-4">
@@ -169,33 +215,52 @@ export default function Franchises() {
               </button>
             </div>
 
-            <form className="space-y-6" onSubmit={(e) => {
+            <form className="space-y-6" onSubmit={async (e) => {
               e.preventDefault();
-              toast.success('Franchise updated successfully!');
-              setEditingFranchise(null);
+              const formData = new FormData(e.currentTarget);
+              const data = {
+                name: formData.get('name'),
+                ownerName: formData.get('ownerName'),
+                phoneNumber: formData.get('phoneNumber'),
+                email: formData.get('email'),
+                location: formData.get('location'),
+              };
+              try {
+                const res = await fetch(`/api/franchises/${editingFranchise.id}`, {
+                  method: 'PATCH',
+                  body: JSON.stringify(data),
+                });
+                if (res.ok) {
+                  toast.success('Franchise updated successfully!');
+                  setEditingFranchise(null);
+                  fetchFranchises();
+                }
+              } catch (error) {
+                toast.error('Failed to update franchise');
+              }
             }}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-white/60">Franchise Name</label>
-                  <input type="text" className="input-field" defaultValue={editingFranchise.name} required />
+                  <input type="text" name="name" className="input-field" defaultValue={editingFranchise.name} required />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-white/60">Owner Name</label>
-                  <input type="text" className="input-field" defaultValue={editingFranchise.owner} required />
+                  <input type="text" name="ownerName" className="input-field" defaultValue={editingFranchise.ownerName} required />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-white/60">Phone Number</label>
-                  <input type="text" className="input-field" defaultValue={editingFranchise.phone} required />
+                  <input type="text" name="phoneNumber" className="input-field" defaultValue={editingFranchise.phoneNumber} required />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-white/60">Email Address</label>
-                  <input type="email" className="input-field" defaultValue={editingFranchise.email} required />
+                  <input type="email" name="email" className="input-field" defaultValue={editingFranchise.email} required />
                 </div>
               </div>
 
               <div className="space-y-2">
                 <label className="text-sm font-medium text-white/60">Location / Address</label>
-                <textarea className="input-field min-h-[80px]" defaultValue={editingFranchise.location} required></textarea>
+                <textarea name="location" className="input-field min-h-[80px]" defaultValue={editingFranchise.location} required></textarea>
               </div>
 
               <div className="flex gap-4 pt-4">

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { 
   Search, 
   Plus, 
@@ -22,27 +22,67 @@ export default function UserManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingUser, setEditingUser] = useState<any>(null);
-  
-  // Mock Data
-  const [users, setUsers] = useState([
-    { id: 1, username: 'superadmin', role: 'Super Admin', franchise: 'All', email: 'admin@dryft.com', status: 'active', lastLogin: '2 hours ago' },
-    { id: 2, username: 'johnd_manager', role: 'Manager', franchise: 'Downtown', email: 'john@dryft.com', status: 'active', lastLogin: '1 day ago' },
-    { id: 3, username: 'sarah_op', role: 'Operator', franchise: 'Uptown', email: 'sarah@dryft.com', status: 'inactive', lastLogin: '5 days ago' },
-    { id: 4, username: 'mike_manager', role: 'Manager', franchise: 'Westside', email: 'mike@dryft.com', status: 'active', lastLogin: '3 hours ago' },
-  ]);
+  const [users, setUsers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [franchises, setFranchises] = useState<any[]>([]);
 
-  const handleDelete = (id: number) => {
-    if (confirm('Are you sure you want to delete this user?')) {
-      setUsers(users.filter(u => u.id !== id));
-      toast.success('User deleted successfully');
+  useEffect(() => {
+    fetchUsers();
+    fetchFranchises();
+  }, []);
+
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch('/api/users');
+      const data = await res.json();
+      if (res.ok) setUsers(data);
+    } catch (error) {
+      toast.error('Failed to load users');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const toggleStatus = (id: number) => {
-    setUsers(users.map(u => 
-      u.id === id ? { ...u, status: u.status === 'active' ? 'inactive' : 'active' } : u
-    ));
-    toast.success('User status updated');
+  const fetchFranchises = async () => {
+    try {
+      const res = await fetch('/api/franchises');
+      const data = await res.json();
+      if (res.ok) setFranchises(data);
+    } catch (error) {}
+  };
+
+  const handleDelete = async (id: number) => {
+    if (confirm('Are you sure you want to delete this user?')) {
+      try {
+        const res = await fetch(`/api/users/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+          setUsers(users.filter(u => u.id !== id));
+          toast.success('User deleted successfully');
+        } else {
+          const data = await res.json();
+          toast.error(data.error || 'Failed to delete');
+        }
+      } catch (error) {
+        toast.error('An error occurred');
+      }
+    }
+  };
+
+  const toggleStatus = async (id: number, currentStatus: string) => {
+    const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+    try {
+      const res = await fetch(`/api/users/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (res.ok) {
+        setUsers(users.map(u => u.id === id ? { ...u, status: newStatus } : u));
+        toast.success(`User is now ${newStatus}`);
+      }
+    } catch (error) {
+      toast.error('Failed to update status');
+    }
   };
 
   return (
@@ -146,17 +186,17 @@ export default function UserManagement() {
                   <td className="px-6 py-4">
                     <span className={cn(
                       "text-[10px] font-bold uppercase px-2 py-1 rounded-md border",
-                      user.role === 'Super Admin' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
-                      user.role === 'Manager' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
+                      user.role?.name === 'Super Admin' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
+                      user.role?.name === 'Manager' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
                       'bg-slate-500/10 text-slate-400 border-slate-500/20'
                     )}>
-                      {user.role}
+                      {user.role?.name || 'User'}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-sm text-white/60">{user.franchise}</td>
+                  <td className="px-6 py-4 text-sm text-white/60">{user.franchise?.name || 'All Access'}</td>
                   <td className="px-6 py-4">
                     <button 
-                      onClick={() => toggleStatus(user.id)}
+                      onClick={() => toggleStatus(user.id, user.status)}
                       className={cn(
                         "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase transition-colors",
                         user.status === 'active' 
@@ -168,7 +208,7 @@ export default function UserManagement() {
                       {user.status}
                     </button>
                   </td>
-                  <td className="px-6 py-4 text-xs text-white/40">{user.lastLogin}</td>
+                  <td className="px-6 py-4 text-xs text-white/40">{user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}</td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button 
@@ -203,10 +243,29 @@ export default function UserManagement() {
               </button>
             </div>
 
-            <form className="space-y-6" onSubmit={(e) => {
+            <form className="space-y-6" onSubmit={async (e) => {
               e.preventDefault();
-              toast.success('User account created successfully!');
-              setShowAddModal(false);
+              const formData = new FormData(e.currentTarget);
+              const data = {
+                username: formData.get('username'),
+                email: formData.get('email'),
+                password: formData.get('password'),
+                roleName: formData.get('roleName'),
+                franchiseId: formData.get('franchiseId'),
+              };
+              try {
+                const res = await fetch('/api/users', {
+                  method: 'POST',
+                  body: JSON.stringify(data),
+                });
+                if (res.ok) {
+                  toast.success('User account created successfully!');
+                  setShowAddModal(false);
+                  fetchUsers();
+                }
+              } catch (error) {
+                toast.error('Failed to create user');
+              }
             }}>
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
@@ -214,12 +273,12 @@ export default function UserManagement() {
                     <label className="text-sm font-medium text-white/60">Full Name</label>
                     <div className="relative">
                       <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" size={18} />
-                      <input type="text" className="input-field pl-10" placeholder="John Doe" required />
+                      <input type="text" name="fullName" className="input-field pl-10" placeholder="John Doe" required />
                     </div>
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-white/60">Username</label>
-                    <input type="text" className="input-field" placeholder="johndoe" required />
+                    <input type="text" name="username" className="input-field" placeholder="johndoe" required />
                   </div>
                 </div>
 
@@ -227,7 +286,7 @@ export default function UserManagement() {
                   <label className="text-sm font-medium text-white/60">Email Address</label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" size={18} />
-                    <input type="email" className="input-field pl-10" placeholder="john@dryft.com" required />
+                    <input type="email" name="email" className="input-field pl-10" placeholder="john@dryft.com" required />
                   </div>
                 </div>
 
@@ -245,7 +304,7 @@ export default function UserManagement() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-white/60">Role</label>
-                    <select className="input-field bg-dryft-dark">
+                    <select name="roleName" className="input-field bg-dryft-dark">
                       <option>Operator</option>
                       <option>Manager</option>
                       <option>Super Admin</option>
@@ -253,11 +312,11 @@ export default function UserManagement() {
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-white/60">Franchise</label>
-                    <select className="input-field bg-dryft-dark">
-                      <option>Downtown</option>
-                      <option>Uptown</option>
-                      <option>Westside</option>
-                      <option>All Access</option>
+                    <select name="franchiseId" className="input-field bg-dryft-dark">
+                      <option value="">All Access</option>
+                      {franchises.map(f => (
+                        <option key={f.id} value={f.id}>{f.name}</option>
+                      ))}
                     </select>
                   </div>
                 </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { 
   Search, 
   Plus, 
@@ -19,19 +19,39 @@ export default function Customers() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<any>(null);
-  
-  // Mock Data
-  const [customers, setCustomers] = useState([
-    { id: 1, name: 'John Doe', phone: '+1 234-567-8901', car: 'Tesla Model 3', plate: 'DRYFT-001', branch: 'Downtown', status: 'completed', date: '2024-04-24 10:30 AM' },
-    { id: 2, name: 'Jane Smith', phone: '+1 987-654-3210', car: 'BMW X5', plate: 'WASH-777', branch: 'Uptown', status: 'pending', date: '2024-04-24 11:15 AM' },
-    { id: 3, name: 'Mike Ross', phone: '+1 555-010-9988', car: 'Audi Q7', plate: 'SNEAK-01', branch: 'Westside', status: 'completed', date: '2024-04-23 02:45 PM' },
-    { id: 4, name: 'Harvey Specter', phone: '+1 444-222-3333', car: 'Mercedes S-Class', plate: 'SUITS-1', branch: 'Downtown', status: 'pending', date: '2024-04-23 04:20 PM' },
-  ]);
+  const [customers, setCustomers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleDelete = (id: number) => {
+  useEffect(() => {
+    fetchCustomers();
+  }, []);
+
+  const fetchCustomers = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch('/api/customers');
+      const data = await res.json();
+      if (res.ok) setCustomers(data);
+    } catch (error) {
+      toast.error('Failed to load customers');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
     if (confirm('Are you sure you want to delete this customer record?')) {
-      setCustomers(customers.filter(c => c.id !== id));
-      toast.success('Customer record deleted');
+      try {
+        const res = await fetch(`/api/customers/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+          setCustomers(customers.filter(c => c.id !== id));
+          toast.success('Customer record deleted permanently');
+        } else {
+          toast.error('Failed to delete customer');
+        }
+      } catch (error) {
+        toast.error('An error occurred');
+      }
     }
   };
 
@@ -98,17 +118,17 @@ export default function Customers() {
                       </div>
                       <div>
                         <p className="text-sm font-medium text-white">{customer.name}</p>
-                        <p className="text-xs text-white/40">{customer.car}</p>
+                        <p className="text-xs text-white/40">{customer.carModel}</p>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4">
                     <span className="text-sm font-mono bg-white/5 px-2 py-1 rounded border border-white/10">
-                      {customer.plate}
+                      {customer.carRegistration}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-sm text-white/60">{customer.branch}</td>
-                  <td className="px-6 py-4 text-xs text-white/40">{customer.date}</td>
+                  <td className="px-6 py-4 text-sm text-white/60">{customer.franchise?.name}</td>
+                  <td className="px-6 py-4 text-xs text-white/40">{customer.created_at ? new Date(customer.created_at).toLocaleDateString() : 'N/A'}</td>
                   <td className="px-6 py-4">
                     {customer.status === 'completed' ? (
                       <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-500/10 text-emerald-500 text-[10px] font-bold uppercase">

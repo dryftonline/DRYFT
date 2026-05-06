@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Box, Search, AlertTriangle, ArrowUpRight, History, X, Package, Plus, Minus, Trash2, Store, ChevronLeft, ArrowRight } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
@@ -8,25 +8,55 @@ export default function StockUpdates() {
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [showAddProductModal, setShowAddProductModal] = useState(false);
   const [selectedFranchise, setSelectedFranchise] = useState<string | null>(null);
+  const [stock, setStock] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
   
-  const [franchises] = useState([
-    { id: 1, name: 'Downtown', location: 'City Center', lowStock: 1 },
-    { id: 2, name: 'Uptown', location: 'North Side', lowStock: 1 },
-    { id: 3, name: 'Westside', location: 'West Square', lowStock: 1 },
-  ]);
+  const [franchises, setFranchises] = useState<any[]>([]);
 
-  const [stock, setStock] = useState([
-    { id: 1, item: 'Wash Shampoo (5L)', branch: 'Downtown', qty: 45, threshold: 10, lastUpdate: '2h ago', status: 'ok' },
-    { id: 2, item: 'Microfiber Towels', branch: 'Uptown', qty: 8, threshold: 15, lastUpdate: '5h ago', status: 'low' },
-    { id: 3, item: 'Tire Shine Spray', branch: 'Westside', qty: 3, threshold: 10, lastUpdate: '1d ago', status: 'low' },
-    { id: 4, item: 'Vacuum Filters', branch: 'Downtown', qty: 22, threshold: 5, lastUpdate: '3h ago', status: 'ok' },
-    { id: 5, item: 'Interior Cleaner', branch: 'Downtown', qty: 12, threshold: 5, lastUpdate: '1h ago', status: 'ok' },
-  ]);
+  useEffect(() => {
+    fetchFranchises();
+  }, []);
 
-  const handleDelete = (id: number) => {
+  useEffect(() => {
+    if (selectedFranchise) {
+      fetchStock(selectedFranchise);
+    }
+  }, [selectedFranchise]);
+
+  const fetchFranchises = async () => {
+    try {
+      const res = await fetch('/api/franchises');
+      const data = await res.json();
+      if (res.ok) setFranchises(data);
+    } catch (error) {}
+  };
+
+  const fetchStock = async (branchName: string) => {
+    try {
+      setLoading(true);
+      const res = await fetch(`/api/stock?franchise=${encodeURIComponent(branchName)}`);
+      const data = await res.json();
+      if (res.ok) setStock(data);
+    } catch (error) {
+      toast.error('Failed to load stock');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
     if (confirm('Are you sure you want to remove this item from stock monitoring?')) {
-      setStock(stock.filter(s => s.id !== id));
-      toast.success('Item removed from monitoring');
+      try {
+        const res = await fetch(`/api/stock/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+          setStock(stock.filter(s => s.id !== id));
+          toast.success('Item removed from monitoring');
+        } else {
+          toast.error('Failed to remove item');
+        }
+      } catch (error) {
+        toast.error('An error occurred');
+      }
     }
   };
 
@@ -150,18 +180,18 @@ export default function StockUpdates() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
-                  {filteredStock.map((item) => (
+                  {stock.map((item) => (
                     <tr key={item.id} className="hover:bg-white/[0.02]">
-                      <td className="px-6 py-4 font-medium text-white">{item.item}</td>
+                      <td className="px-6 py-4 font-medium text-white">{item.stockItem?.name}</td>
                       <td className="px-6 py-4 text-white">
-                        <span className={item.status === 'low' ? 'text-amber-500 font-bold' : ''}>
-                          {item.qty}
+                        <span className={item.availableQuantity < item.lowStockThreshold ? 'text-amber-500 font-bold' : ''}>
+                          {item.availableQuantity}
                         </span>
-                        <span className="text-white/20 text-xs ml-2">/ thr: {item.threshold}</span>
+                        <span className="text-white/20 text-xs ml-2">/ thr: {item.lowStockThreshold}</span>
                       </td>
-                      <td className="px-6 py-4 text-xs text-white/30">{item.lastUpdate}</td>
+                      <td className="px-6 py-4 text-xs text-white/30">{item.updated_at ? new Date(item.updated_at).toLocaleDateString() : 'N/A'}</td>
                       <td className="px-6 py-4">
-                        {item.status === 'low' ? (
+                        {item.availableQuantity < item.lowStockThreshold ? (
                           <span className="px-2 py-1 bg-amber-500/10 text-amber-500 rounded text-[10px] font-bold uppercase">Critical</span>
                         ) : (
                           <span className="px-2 py-1 bg-white/5 text-white/40 rounded text-[10px] font-bold uppercase">Healthy</span>
@@ -200,10 +230,27 @@ export default function StockUpdates() {
               </button>
             </div>
 
-            <form className="space-y-6" onSubmit={(e) => {
+            <form className="space-y-6" onSubmit={async (e) => {
               e.preventDefault();
-              toast.success('Stock levels updated successfully!');
-              setShowUpdateModal(false);
+              const formData = new FormData(e.currentTarget);
+              const stockId = formData.get('stockId');
+              const quantity = formData.get('quantity');
+              
+              try {
+                const res = await fetch(`/api/stock/${stockId}`, {
+                  method: 'PATCH',
+                  body: JSON.stringify({ 
+                    availableQuantity: parseInt(quantity as string),
+                  }),
+                });
+                if (res.ok) {
+                  toast.success('Stock levels updated successfully!');
+                  setShowUpdateModal(false);
+                  if (selectedFranchise) fetchStock(selectedFranchise);
+                }
+              } catch (error) {
+                toast.error('Failed to update stock');
+              }
             }}>
               <div className="space-y-4">
                 <div className="space-y-2">
@@ -219,30 +266,26 @@ export default function StockUpdates() {
                   <label className="text-sm font-medium text-white/60">Inventory Item</label>
                   <div className="relative">
                     <Package className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" size={18} />
-                    <select className="input-field pl-10 bg-dryft-dark">
-                      <option>Wash Shampoo (5L)</option>
-                      <option>Microfiber Towels</option>
-                      <option>Tire Shine Spray</option>
-                      <option>Vacuum Filters</option>
+                    <select name="stockId" className="input-field pl-10 bg-dryft-dark" required>
+                      {stock.map(item => (
+                        <option key={item.id} value={item.id}>{item.stockItem?.name}</option>
+                      ))}
                     </select>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-white/60">Action</label>
-                    <div className="flex gap-2">
-                      <button type="button" className="flex-1 py-2 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-lg flex items-center justify-center gap-2">
-                        <Plus size={16} /> Add
-                      </button>
-                      <button type="button" className="flex-1 py-2 bg-white/5 text-white/40 border border-white/10 rounded-lg flex items-center justify-center gap-2">
-                        <Minus size={16} /> Remove
-                      </button>
-                    </div>
+                    <label className="text-sm font-medium text-white/60">Adjustment Type</label>
+                    <select name="type" className="input-field bg-dryft-dark">
+                      <option value="set">Set Absolute (=)</option>
+                      <option value="add">Add Stock (+)</option>
+                      <option value="remove">Remove Stock (-)</option>
+                    </select>
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-white/60">Quantity</label>
-                    <input type="number" className="input-field" placeholder="0" required />
+                    <input type="number" name="quantity" className="input-field" placeholder="0" required />
                   </div>
                 </div>
 
