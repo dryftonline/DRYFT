@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { 
   Users, 
   Store, 
@@ -59,13 +60,29 @@ const StatCard = ({ title, value, icon: Icon, color, trend }: any) => (
 );
 
 export default function Dashboard() {
+  const [stats, setStats] = React.useState({ customers: 0, franchises: 0, stock: 0 });
+
+  React.useEffect(() => {
+    Promise.all([
+      fetch('/api/customers').then(res => res.ok ? res.json() : []),
+      fetch('/api/franchises').then(res => res.ok ? res.json() : []),
+      fetch('/api/stock').then(res => res.ok ? res.json() : [])
+    ]).then(([cust, fran, st]) => {
+      setStats({
+        customers: cust.length || 0,
+        franchises: fran.length || 0,
+        stock: st.length || 0
+      });
+    }).catch(console.error);
+  }, []);
+
   const chartData = {
     labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
     datasets: [
       {
         fill: true,
         label: 'Cars Washed',
-        data: [45, 52, 48, 70, 65, 88, 95],
+        data: [0, 0, 0, 0, 0, 0, 0],
         borderColor: '#d1c7b7',
         backgroundColor: 'rgba(209, 199, 183, 0.05)',
         tension: 0.4,
@@ -107,10 +124,10 @@ export default function Dashboard() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard title="Total Customers" value="2,842" icon={Users} color="bg-blue-500" trend="+12.5%" />
-        <StatCard title="Active Franchises" value="18" icon={Store} color="bg-amber-500" />
-        <StatCard title="Cars Today" value="95" icon={Car} color="bg-dryft-beige" trend="+8%" />
-        <StatCard title="Pending Stock" value="4" icon={Box} color="bg-rose-500" />
+        <StatCard title="Total Customers" value={stats.customers} icon={Users} color="bg-blue-500" />
+        <StatCard title="Active Franchises" value={stats.franchises} icon={Store} color="bg-amber-500" />
+        <StatCard title="Cars Today" value="0" icon={Car} color="bg-dryft-beige" />
+        <StatCard title="Pending Stock" value={stats.stock} icon={Box} color="bg-rose-500" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -132,24 +149,9 @@ export default function Dashboard() {
         <div className="glass-panel p-6 flex flex-col">
           <h3 className="font-bold text-white mb-6">Recent Alerts</h3>
           <div className="space-y-6 flex-1">
-            {[
-              { type: 'Urgent', msg: 'Low stock: Chemical A - Downtown Branch', time: '10m ago' },
-              { type: 'Info', msg: 'New franchise manager assigned - Westside', time: '1h ago' },
-              { type: 'Urgent', msg: 'Pending stock approval for Uptown', time: '3h ago' },
-            ].map((alert, i) => (
-              <div key={i} className="flex gap-4">
-                <div className={cn(
-                  "w-1 h-10 rounded-full",
-                  alert.type === 'Urgent' ? 'bg-rose-500' : 'bg-blue-500'
-                )} />
-                <div>
-                  <p className="text-sm text-white/80 line-clamp-1">{alert.msg}</p>
-                  <p className="text-xs text-white/30 mt-1 flex items-center gap-1">
-                    <Clock size={10} /> {alert.time}
-                  </p>
-                </div>
-              </div>
-            ))}
+            <div className="text-center py-8 text-white/40 text-sm">
+              <p>No recent alerts.</p>
+            </div>
           </div>
           <Link 
             href="/notifications"
