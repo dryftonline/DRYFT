@@ -25,9 +25,10 @@ export default function Customers() {
   // POS Pricing State
   const [selectedService, setSelectedService] = useState('exterior');
   const [vehicleType, setVehicleType] = useState('standard');
-  const [customServiceName, setCustomServiceName] = useState('');
-  const [customServiceAmount, setCustomServiceAmount] = useState<number | ''>('');
+  const [selectedAddon, setSelectedAddon] = useState('');
+  const [addonAmount, setAddonAmount] = useState<number | ''>('');
   const [discount, setDiscount] = useState<number | ''>('');
+  const [generatedKot, setGeneratedKot] = useState('');
 
   let basePrice = selectedService === 'exterior' ? 250 : selectedService === 'interior_exterior' ? 500 : 0;
   let vehicleAddon = 0;
@@ -38,7 +39,7 @@ export default function Customers() {
     if (vehicleType === 'suv') vehicleAddon = 50;
     if (vehicleType === 'mpv') vehicleAddon = 150;
   }
-  const subTotal = basePrice + vehicleAddon + (Number(customServiceAmount) || 0);
+  const subTotal = basePrice + vehicleAddon + (Number(addonAmount) || 0);
   const finalTotal = subTotal - (subTotal * (Number(discount) || 0) / 100);
 
   useEffect(() => {
@@ -82,7 +83,10 @@ export default function Customers() {
           <p className="text-white/40 text-sm">View and manage car wash customer data across all branches.</p>
         </div>
         <button 
-          onClick={() => setShowAddModal(true)}
+          onClick={() => {
+            setGeneratedKot(`KOT-${Math.floor(10000 + Math.random() * 90000)}`);
+            setShowAddModal(true);
+          }}
           className="btn-primary flex items-center gap-2"
         >
           <Plus size={18} />
@@ -244,7 +248,7 @@ export default function Customers() {
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-white/60">KOT / Ticket No.</label>
-                  <input type="text" className="input-field uppercase" placeholder="e.g. KOT-1042" />
+                  <input type="text" className="input-field bg-white/5 text-white/60 cursor-not-allowed" value={generatedKot} readOnly />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-white/60">Payment Method</label>
@@ -371,7 +375,7 @@ export default function Customers() {
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-white/60">KOT / Ticket No.</label>
-                  <input type="text" className="input-field uppercase" defaultValue={editingCustomer.kot || ''} placeholder="e.g. KOT-1042" />
+                  <input type="text" className="input-field bg-white/5 text-white/60 cursor-not-allowed" defaultValue={editingCustomer.kot || generatedKot} readOnly />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-white/60">Payment Method</label>
@@ -401,12 +405,21 @@ export default function Customers() {
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-white/60">Custom Add-on Service</label>
-                  <input type="text" className="input-field" placeholder="e.g. Engine Detailing" value={customServiceName} onChange={(e) => setCustomServiceName(e.target.value)} />
+                  <label className="text-sm font-medium text-white/60">Select Add-on Service</label>
+                  <select className="input-field bg-dryft-dark" value={selectedAddon} onChange={(e) => setSelectedAddon(e.target.value)}>
+                    <option value="">None</option>
+                    <option value="plastic_restoration">Plastic Restoration (₹300 - ₹500)</option>
+                    <option value="ceramic_coating">Hybrid Ceramic Coating w/ Warranty (₹2000)</option>
+                    <option value="glass_coating">Glass Coating (₹300 - ₹1000 based on size)</option>
+                    <option value="scratch_removal">Minor Scratch Removal (₹50 - ₹100 / scratch)</option>
+                    <option value="engine_bay">Engine Bay Cleaning + Polish (₹300 - ₹1000)</option>
+                    <option value="headlight_restoration">Headlight Restoration (₹799 - ₹2000)</option>
+                    <option value="tyre_polish">Permanent Tyre Polish (₹100)</option>
+                  </select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-white/60">Custom Amount (₹)</label>
-                  <input type="number" className="input-field" placeholder="0" value={customServiceAmount} onChange={(e) => setCustomServiceAmount(e.target.value === '' ? '' : Number(e.target.value))} />
+                  <label className="text-sm font-medium text-white/60">Add-on Amount (₹)</label>
+                  <input type="number" className="input-field" placeholder="Enter finalized amount..." value={addonAmount} onChange={(e) => setAddonAmount(e.target.value === '' ? '' : Number(e.target.value))} />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-white/60">Discount Applied (%)</label>
