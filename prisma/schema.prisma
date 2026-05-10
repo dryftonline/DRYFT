@@ -72,7 +72,17 @@ model Customer {
   franchiseId     Int
   uploadedBy      Int
   notes           String?
-  status          String    @default("pending")
+  status          String    @default("ongoing")
+  kot             String?
+  service         String?
+  vehicleType     String?
+  addon           String?
+  addonAmount     Float?
+  discountType    String?
+  discount        Float?
+  discountNote    String?
+  finalTotal      Float?
+  paymentMethod   String?
   created_at      DateTime  @default(now())
   franchise       Franchise @relation(fields: [franchiseId], references: [id])
   uploader        User      @relation("UploadedBy", fields: [uploadedBy], references: [id])

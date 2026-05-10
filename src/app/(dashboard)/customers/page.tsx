@@ -147,9 +147,9 @@ export default function Customers() {
             <thead>
               <tr className="border-b border-white/5 text-white/40 text-xs uppercase tracking-wider">
                 <th className="px-6 py-4 font-semibold">Customer & Car</th>
-                <th className="px-6 py-4 font-semibold">Plate Number</th>
-                <th className="px-6 py-4 font-semibold">Branch</th>
-                <th className="px-6 py-4 font-semibold">Date & Time</th>
+                <th className="px-6 py-4 font-semibold">Plate / KOT</th>
+                <th className="px-6 py-4 font-semibold">Branch & Service</th>
+                <th className="px-6 py-4 font-semibold">Payment / Amount</th>
                 <th className="px-6 py-4 font-semibold">Status</th>
                 <th className="px-6 py-4 font-semibold text-right">Actions</th>
               </tr>
@@ -175,9 +175,16 @@ export default function Customers() {
                     <span className="text-sm font-mono bg-white/5 px-2 py-1 rounded border border-white/10">
                       {customer.carRegistration}
                     </span>
+                    <p className="text-xs text-white/40 mt-1">{customer.kot || 'N/A'}</p>
                   </td>
-                  <td className="px-6 py-4 text-sm text-white/60">{customer.franchise?.name}</td>
-                  <td className="px-6 py-4 text-xs text-white/40">{customer.created_at ? new Date(customer.created_at).toLocaleDateString() : 'N/A'}</td>
+                  <td className="px-6 py-4 text-sm text-white/60">
+                    {customer.franchise?.name || 'Main Branch'}
+                    <p className="text-xs text-white/40 mt-1 capitalize">{customer.service?.replace('_', ' ') || 'Unknown'}</p>
+                  </td>
+                  <td className="px-6 py-4 text-xs text-white/40">
+                    <span className="capitalize">{customer.paymentMethod || 'Cash'}</span>
+                    <p className="text-sm text-emerald-400 mt-1 font-bold">₹{customer.finalTotal || '0'}</p>
+                  </td>
                   <td className="px-6 py-4">
                     {customer.status === 'completed' ? (
                       <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-500/10 text-emerald-500 text-[10px] font-bold uppercase">
@@ -245,10 +252,37 @@ export default function Customers() {
               </button>
             </div>
 
-            <form className="space-y-6" onSubmit={(e) => {
+            <form className="space-y-6" onSubmit={async (e) => {
               e.preventDefault();
-              toast.success('Customer upload successful!');
-              setShowAddModal(false);
+              const form = e.currentTarget as HTMLFormElement;
+              const name = (form.querySelector('input[placeholder="Full Name"]') as HTMLInputElement).value;
+              const phone = (form.querySelector('input[placeholder="+1..."]') as HTMLInputElement).value;
+              const carModel = (form.querySelector('input[placeholder="e.g. Toyota Camry"]') as HTMLInputElement).value;
+              const carRegistration = (form.querySelector('input[placeholder="Plate Number"]') as HTMLInputElement).value;
+              const paymentMethod = (form.querySelectorAll('select')[1] as HTMLSelectElement).value;
+              const notes = (form.querySelector('textarea') as HTMLTextAreaElement).value;
+
+              const payload = {
+                name, phone, carModel, carRegistration, paymentMethod, notes,
+                franchiseId: 1, uploadedBy: 1, kot: generatedKot, service: selectedService,
+                vehicleType, addon: selectedAddon, addonAmount: Number(addonAmount) || 0,
+                discountType, discount: Number(discount) || 0, discountNote, finalTotal, status: 'ongoing'
+              };
+
+              try {
+                const res = await fetch('/api/customers', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(payload)
+                });
+                if (res.ok) {
+                  toast.success('Customer upload successful!');
+                  setShowAddModal(false);
+                  fetchCustomers();
+                } else throw new Error();
+              } catch (error) {
+                toast.error('Failed to save customer');
+              }
             }}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">

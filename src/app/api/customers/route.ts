@@ -20,7 +20,11 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, phone, carRegistration, carModel, franchiseId, uploadedBy, notes } = body;
+    const { 
+      name, phone, carRegistration, carModel, franchiseId, uploadedBy, notes,
+      kot, service, vehicleType, addon, addonAmount, discountType, 
+      discount, discountNote, finalTotal, paymentMethod, status
+    } = body;
 
     const customer = await prisma.customer.create({
       data: {
@@ -28,10 +32,20 @@ export async function POST(request: Request) {
         phone,
         carRegistration,
         carModel,
-        franchiseId: parseInt(franchiseId),
-        uploadedBy: parseInt(uploadedBy),
+        franchiseId: parseInt(franchiseId) || 1, // Fallback to 1 for demo purposes
+        uploadedBy: parseInt(uploadedBy) || 1,   // Fallback to 1 for demo purposes
         notes,
-        status: 'pending'
+        status: status || 'ongoing',
+        kot,
+        service,
+        vehicleType,
+        addon,
+        addonAmount: addonAmount ? parseFloat(addonAmount) : null,
+        discountType,
+        discount: discount ? parseFloat(discount) : null,
+        discountNote,
+        finalTotal: finalTotal ? parseFloat(finalTotal) : null,
+        paymentMethod
       }
     });
 
