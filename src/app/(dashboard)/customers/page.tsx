@@ -22,6 +22,25 @@ export default function Customers() {
   const [customers, setCustomers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // POS Pricing State
+  const [selectedService, setSelectedService] = useState('exterior');
+  const [vehicleType, setVehicleType] = useState('standard');
+  const [customServiceName, setCustomServiceName] = useState('');
+  const [customServiceAmount, setCustomServiceAmount] = useState<number | ''>('');
+  const [discount, setDiscount] = useState<number | ''>('');
+
+  let basePrice = selectedService === 'exterior' ? 250 : selectedService === 'interior_exterior' ? 500 : 0;
+  let vehicleAddon = 0;
+  if (selectedService === 'exterior') {
+    if (vehicleType === 'suv') vehicleAddon = 50;
+    if (vehicleType === 'mpv') vehicleAddon = 100;
+  } else if (selectedService === 'interior_exterior') {
+    if (vehicleType === 'suv') vehicleAddon = 50;
+    if (vehicleType === 'mpv') vehicleAddon = 150;
+  }
+  const subTotal = basePrice + vehicleAddon + (Number(customServiceAmount) || 0);
+  const finalTotal = subTotal - (subTotal * (Number(discount) || 0) / 100);
+
   useEffect(() => {
     fetchCustomers();
   }, []);
@@ -236,12 +255,42 @@ export default function Customers() {
                     <option>Pending Payment</option>
                   </select>
                 </div>
+                <div className="space-y-2 md:col-span-2 border-t border-white/10 pt-4 mt-2">
+                  <h3 className="font-bold text-white mb-2">Service & Billing</h3>
+                </div>
                 <div className="space-y-2 md:col-span-2">
+                  <label className="text-sm font-medium text-white/60">Primary Service</label>
+                  <select className="input-field bg-dryft-dark" value={selectedService} onChange={(e) => setSelectedService(e.target.value)}>
+                    <option value="exterior">Exterior Wash (₹250)</option>
+                    <option value="interior_exterior">Interior + Exterior Wash (₹500)</option>
+                  </select>
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-sm font-medium text-white/60">Vehicle Size Add-on</label>
+                  <select className="input-field bg-dryft-dark" value={vehicleType} onChange={(e) => setVehicleType(e.target.value)}>
+                    <option value="standard">Standard Car (No extra charge)</option>
+                    <option value="suv">SUV (+₹50)</option>
+                    <option value="mpv">MPV / 7-Seater (+₹{selectedService === 'exterior' ? '100' : '150'})</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-white/60">Custom Add-on Service</label>
+                  <input type="text" className="input-field" placeholder="e.g. Engine Detailing" value={customServiceName} onChange={(e) => setCustomServiceName(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-white/60">Custom Amount (₹)</label>
+                  <input type="number" className="input-field" placeholder="0" value={customServiceAmount} onChange={(e) => setCustomServiceAmount(e.target.value === '' ? '' : Number(e.target.value))} />
+                </div>
+                <div className="space-y-2">
                   <label className="text-sm font-medium text-white/60">Discount Applied (%)</label>
                   <div className="relative">
-                    <input type="number" className="input-field" placeholder="0" min="0" max="100" />
+                    <input type="number" className="input-field" placeholder="0" min="0" max="100" value={discount} onChange={(e) => setDiscount(e.target.value === '' ? '' : Number(e.target.value))} />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40">%</span>
                   </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-white/60">Final Amount (₹)</label>
+                  <input type="text" className="input-field bg-emerald-500/10 border-emerald-500/30 text-emerald-400 font-bold" value={`₹${finalTotal.toFixed(2)}`} readOnly />
                 </div>
               </div>
 
@@ -333,12 +382,42 @@ export default function Customers() {
                     <option value="Pending Payment">Pending Payment</option>
                   </select>
                 </div>
+                <div className="space-y-2 md:col-span-2 border-t border-white/10 pt-4 mt-2">
+                  <h3 className="font-bold text-white mb-2">Service & Billing</h3>
+                </div>
                 <div className="space-y-2 md:col-span-2">
+                  <label className="text-sm font-medium text-white/60">Primary Service</label>
+                  <select className="input-field bg-dryft-dark" value={selectedService} onChange={(e) => setSelectedService(e.target.value)}>
+                    <option value="exterior">Exterior Wash (₹250)</option>
+                    <option value="interior_exterior">Interior + Exterior Wash (₹500)</option>
+                  </select>
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-sm font-medium text-white/60">Vehicle Size Add-on</label>
+                  <select className="input-field bg-dryft-dark" value={vehicleType} onChange={(e) => setVehicleType(e.target.value)}>
+                    <option value="standard">Standard Car (No extra charge)</option>
+                    <option value="suv">SUV (+₹50)</option>
+                    <option value="mpv">MPV / 7-Seater (+₹{selectedService === 'exterior' ? '100' : '150'})</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-white/60">Custom Add-on Service</label>
+                  <input type="text" className="input-field" placeholder="e.g. Engine Detailing" value={customServiceName} onChange={(e) => setCustomServiceName(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-white/60">Custom Amount (₹)</label>
+                  <input type="number" className="input-field" placeholder="0" value={customServiceAmount} onChange={(e) => setCustomServiceAmount(e.target.value === '' ? '' : Number(e.target.value))} />
+                </div>
+                <div className="space-y-2">
                   <label className="text-sm font-medium text-white/60">Discount Applied (%)</label>
                   <div className="relative">
-                    <input type="number" className="input-field" defaultValue={editingCustomer.discount || 0} placeholder="0" min="0" max="100" />
+                    <input type="number" className="input-field" placeholder="0" min="0" max="100" value={discount} onChange={(e) => setDiscount(e.target.value === '' ? '' : Number(e.target.value))} />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40">%</span>
                   </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-white/60">Final Amount (₹)</label>
+                  <input type="text" className="input-field bg-emerald-500/10 border-emerald-500/30 text-emerald-400 font-bold" value={`₹${finalTotal.toFixed(2)}`} readOnly />
                 </div>
               </div>
 
