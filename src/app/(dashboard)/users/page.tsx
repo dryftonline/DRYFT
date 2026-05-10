@@ -14,7 +14,9 @@ import {
   MoreVertical,
   CheckCircle2,
   XCircle,
-  X
+  X,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
@@ -25,6 +27,8 @@ export default function UserManagement() {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [franchises, setFranchises] = useState<any[]>([]);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -293,11 +297,41 @@ export default function UserManagement() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-white/60">Password</label>
-                    <input type="password" name="password" className="input-field" placeholder="••••••••" required />
+                    <div className="relative">
+                      <input 
+                        type={showPassword ? "text" : "password"} 
+                        name="password" 
+                        className="input-field pr-10" 
+                        placeholder="••••••••" 
+                        required 
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
+                      >
+                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-white/60">Confirm Password</label>
-                    <input type="password" name="confirmPassword" className="input-field" placeholder="••••••••" required />
+                    <div className="relative">
+                      <input 
+                        type={showConfirmPassword ? "text" : "password"} 
+                        name="confirmPassword" 
+                        className="input-field pr-10" 
+                        placeholder="••••••••" 
+                        required 
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
+                      >
+                        {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
                   </div>
                 </div>
 
