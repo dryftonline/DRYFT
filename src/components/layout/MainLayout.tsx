@@ -75,7 +75,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       {/* Sidebar - Desktop */}
       <aside className="hidden lg:flex flex-col w-72 border-r border-white/5 p-6 space-y-8 sticky top-0 h-screen">
         <div className="flex items-center gap-3 px-4">
-          <div className="w-10 h-10 bg-dryft-beige rounded-xl flex items-center justify-center font-bold text-dryft-dark text-xl">D</div>
+          <img src="/logo.png" alt="DRYFT Logo" className="h-10 w-auto object-contain rounded-lg" />
           <h1 className="text-2xl font-bold tracking-tight">DRYFT</h1>
         </div>
 
@@ -109,7 +109,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
           <aside className="w-72 h-full bg-dryft-dark p-6 flex flex-col border-r border-white/10">
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-dryft-beige rounded-xl flex items-center justify-center font-bold text-dryft-dark text-xl">D</div>
+                <img src="/logo.png" alt="DRYFT Logo" className="h-10 w-auto object-contain rounded-lg" />
                 <h1 className="text-2xl font-bold">DRYFT</h1>
               </div>
               <button onClick={() => setIsSidebarOpen(false)}><X size={24} /></button>

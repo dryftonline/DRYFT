@@ -78,8 +78,8 @@ export default function InstallPrompt() {
         </button>
         
         <div className="flex items-center gap-4 pr-6">
-          <div className="w-12 h-12 bg-dryft-beige rounded-xl flex items-center justify-center font-bold text-dryft-dark text-xl flex-shrink-0">
-            D
+          <div className="w-12 h-12 flex-shrink-0">
+            <img src="/logo.png" alt="DRYFT Logo" className="w-full h-full object-contain rounded-xl drop-shadow-md" />
           </div>
           <div>
             <h3 className="text-white font-bold text-sm">Install DRYFT Admin</h3>
