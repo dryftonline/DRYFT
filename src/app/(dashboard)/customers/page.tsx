@@ -139,7 +139,7 @@ export default function Customers() {
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-amber-500/10 text-amber-500 text-[10px] font-bold uppercase">
-                        <Clock size={10} /> Pending
+                        <Clock size={10} /> Ongoing
                       </span>
                     )}
                   </td>
@@ -219,9 +219,29 @@ export default function Customers() {
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-white/60">Car Status</label>
                   <select className="input-field bg-dryft-dark">
-                    <option>Pending</option>
+                    <option>Ongoing</option>
                     <option>Completed</option>
                   </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-white/60">KOT / Ticket No.</label>
+                  <input type="text" className="input-field uppercase" placeholder="e.g. KOT-1042" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-white/60">Payment Method</label>
+                  <select className="input-field bg-dryft-dark">
+                    <option>Cash</option>
+                    <option>Card / POS</option>
+                    <option>UPI / Online</option>
+                    <option>Pending Payment</option>
+                  </select>
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-sm font-medium text-white/60">Discount Applied (%)</label>
+                  <div className="relative">
+                    <input type="number" className="input-field" placeholder="0" min="0" max="100" />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40">%</span>
+                  </div>
                 </div>
               </div>
 
@@ -295,10 +315,30 @@ export default function Customers() {
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-white/60">Car Status</label>
-                  <select className="input-field bg-dryft-dark" defaultValue={editingCustomer.status}>
-                    <option value="pending">Pending</option>
+                  <select className="input-field bg-dryft-dark" defaultValue={editingCustomer.status === 'pending' ? 'ongoing' : editingCustomer.status}>
+                    <option value="ongoing">Ongoing</option>
                     <option value="completed">Completed</option>
                   </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-white/60">KOT / Ticket No.</label>
+                  <input type="text" className="input-field uppercase" defaultValue={editingCustomer.kot || ''} placeholder="e.g. KOT-1042" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-white/60">Payment Method</label>
+                  <select className="input-field bg-dryft-dark" defaultValue={editingCustomer.paymentMethod || 'Cash'}>
+                    <option value="Cash">Cash</option>
+                    <option value="Card / POS">Card / POS</option>
+                    <option value="UPI / Online">UPI / Online</option>
+                    <option value="Pending Payment">Pending Payment</option>
+                  </select>
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-sm font-medium text-white/60">Discount Applied (%)</label>
+                  <div className="relative">
+                    <input type="number" className="input-field" defaultValue={editingCustomer.discount || 0} placeholder="0" min="0" max="100" />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40">%</span>
+                  </div>
                 </div>
               </div>
 
