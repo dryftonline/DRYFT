@@ -96,7 +96,10 @@ export default function StockUpdates() {
             <Plus size={18} />
             <span>Add Product</span>
           </button>
-          <button className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white/60 hover:text-white flex items-center gap-2">
+          <button 
+            onClick={() => toast.success('Loading history logs...')}
+            className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white/60 hover:text-white flex items-center gap-2"
+          >
             <History size={18} />
             <span>History</span>
           </button>
@@ -199,7 +202,10 @@ export default function StockUpdates() {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex justify-end gap-2">
-                          <button className="text-dryft-beige hover:text-white p-2 transition-colors">
+                          <button 
+                            onClick={() => toast.success('Redirecting to full item report...')}
+                            className="text-dryft-beige hover:text-white p-2 transition-colors"
+                          >
                             <ArrowUpRight size={18} />
                           </button>
                           <button 

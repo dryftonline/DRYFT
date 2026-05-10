@@ -78,7 +78,7 @@ export default function InstallPrompt() {
         </button>
         
         <div className="flex items-center gap-4 pr-6">
-          <div className="w-12 h-12 flex-shrink-0">
+          <div className="w-16 h-16 flex-shrink-0">
             <img src="/logo.png" alt="DRYFT Logo" className="w-full h-full object-contain rounded-xl drop-shadow-md" />
           </div>
           <div>

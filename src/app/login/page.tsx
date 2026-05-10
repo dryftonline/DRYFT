@@ -43,7 +43,7 @@ export default function LoginPage() {
 
       <div className="w-full max-w-md relative z-10">
         <div className="text-center mb-10">
-          <div className="w-24 h-24 mx-auto mb-6 flex items-center justify-center">
+          <div className="w-32 h-32 mx-auto mb-6 flex items-center justify-center">
             <img src="/logo.png" alt="DRYFT Logo" className="w-full h-full object-contain drop-shadow-xl" />
           </div>
           <h1 className="text-3xl font-bold tracking-tight text-white mb-2">Welcome to DRYFT</h1>

@@ -84,7 +84,10 @@ export default function Customers() {
           />
         </div>
         <div className="flex gap-2">
-          <button className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white/60 hover:text-white flex items-center gap-2">
+          <button 
+            onClick={() => toast.success('Filters applied')}
+            className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white/60 hover:text-white flex items-center gap-2"
+          >
             <Filter size={18} />
             <span>Filters</span>
           </button>
@@ -142,7 +145,7 @@ export default function Customers() {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button className="p-2 hover:bg-white/5 rounded-lg text-white/60 hover:text-white"><Eye size={16} /></button>
+                      <button onClick={() => toast.success('Viewing customer details')} className="p-2 hover:bg-white/5 rounded-lg text-white/60 hover:text-white"><Eye size={16} /></button>
                       <button 
                         onClick={() => setEditingCustomer(customer)}
                         className="p-2 hover:bg-white/5 rounded-lg text-white/60 hover:text-white"
