@@ -278,12 +278,21 @@ export default function Customers() {
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-white/60">Custom Add-on Service</label>
-                  <input type="text" className="input-field" placeholder="e.g. Engine Detailing" value={customServiceName} onChange={(e) => setCustomServiceName(e.target.value)} />
+                  <label className="text-sm font-medium text-white/60">Select Add-on Service</label>
+                  <select className="input-field bg-dryft-dark" value={selectedAddon} onChange={(e) => setSelectedAddon(e.target.value)}>
+                    <option value="">None</option>
+                    <option value="plastic_restoration">Plastic Restoration (₹300 - ₹500)</option>
+                    <option value="ceramic_coating">Hybrid Ceramic Coating w/ Warranty (₹2000)</option>
+                    <option value="glass_coating">Glass Coating (₹300 - ₹1000 based on size)</option>
+                    <option value="scratch_removal">Minor Scratch Removal (₹50 - ₹100 / scratch)</option>
+                    <option value="engine_bay">Engine Bay Cleaning + Polish (₹300 - ₹1000)</option>
+                    <option value="headlight_restoration">Headlight Restoration (₹799 - ₹2000)</option>
+                    <option value="tyre_polish">Permanent Tyre Polish (₹100)</option>
+                  </select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-white/60">Custom Amount (₹)</label>
-                  <input type="number" className="input-field" placeholder="0" value={customServiceAmount} onChange={(e) => setCustomServiceAmount(e.target.value === '' ? '' : Number(e.target.value))} />
+                  <label className="text-sm font-medium text-white/60">Add-on Amount (₹)</label>
+                  <input type="number" className="input-field" placeholder="Enter finalized amount..." value={addonAmount} onChange={(e) => setAddonAmount(e.target.value === '' ? '' : Number(e.target.value))} />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-white/60">Discount Applied (%)</label>
