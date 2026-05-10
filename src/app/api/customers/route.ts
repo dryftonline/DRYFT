@@ -27,11 +27,33 @@ export async function POST(request: Request) {
     } = body;
 
     // Fetch the first available user and franchise to use as fallbacks
-    const fallbackFranchise = await prisma.franchise.findFirst();
-    const fallbackUser = await prisma.user.findFirst();
+    let fallbackFranchise = await prisma.franchise.findFirst();
+    if (!fallbackFranchise) {
+      fallbackFranchise = await prisma.franchise.create({
+        data: {
+          name: 'Main Branch',
+          ownerName: 'Admin',
+          phoneNumber: '0000000000',
+          email: 'admin@dryft.com',
+          location: 'HQ'
+        }
+      });
+    }
 
-    if (!fallbackFranchise || !fallbackUser) {
-      return NextResponse.json({ error: 'Database not initialized with Franchise or User' }, { status: 400 });
+    let fallbackUser = await prisma.user.findFirst();
+    if (!fallbackUser) {
+      let role = await prisma.role.findFirst();
+      if (!role) {
+        role = await prisma.role.create({ data: { name: 'Admin' } });
+      }
+      fallbackUser = await prisma.user.create({
+        data: {
+          username: 'admin',
+          passwordHash: 'placeholder',
+          roleId: role.id,
+          franchiseId: fallbackFranchise.id
+        }
+      });
     }
 
     const customer = await prisma.customer.create({
