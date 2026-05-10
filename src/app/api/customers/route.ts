@@ -26,14 +26,22 @@ export async function POST(request: Request) {
       discount, discountNote, finalTotal, paymentMethod, status
     } = body;
 
+    // Fetch the first available user and franchise to use as fallbacks
+    const fallbackFranchise = await prisma.franchise.findFirst();
+    const fallbackUser = await prisma.user.findFirst();
+
+    if (!fallbackFranchise || !fallbackUser) {
+      return NextResponse.json({ error: 'Database not initialized with Franchise or User' }, { status: 400 });
+    }
+
     const customer = await prisma.customer.create({
       data: {
         name,
         phone,
         carRegistration,
         carModel,
-        franchiseId: parseInt(franchiseId) || 1, // Fallback to 1 for demo purposes
-        uploadedBy: parseInt(uploadedBy) || 1,   // Fallback to 1 for demo purposes
+        franchiseId: parseInt(franchiseId) || fallbackFranchise.id,
+        uploadedBy: parseInt(uploadedBy) || fallbackUser.id,
         notes,
         status: status || 'ongoing',
         kot,
@@ -52,6 +60,6 @@ export async function POST(request: Request) {
     return NextResponse.json(customer);
   } catch (error: any) {
     console.error('Error creating customer:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal server error', details: error.message }, { status: 500 });
   }
 }
