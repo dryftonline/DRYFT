@@ -28,7 +28,13 @@ export default function Customers() {
   const [selectedAddon, setSelectedAddon] = useState('');
   const [addonAmount, setAddonAmount] = useState<number | ''>('');
   const [discount, setDiscount] = useState<number | ''>('');
+  const [discountType, setDiscountType] = useState<'percent' | 'fixed'>('percent');
+  const [discountNote, setDiscountNote] = useState('');
   const [generatedKot, setGeneratedKot] = useState('');
+  
+  const [completingCustomer, setCompletingCustomer] = useState<any>(null);
+  const [completionNotes, setCompletionNotes] = useState('');
+  const [completionPayment, setCompletionPayment] = useState('Cash');
 
   let basePrice = selectedService === 'exterior' ? 250 : selectedService === 'interior_exterior' ? 500 : 0;
   let vehicleAddon = 0;
@@ -39,8 +45,25 @@ export default function Customers() {
     if (vehicleType === 'suv') vehicleAddon = 50;
     if (vehicleType === 'mpv') vehicleAddon = 150;
   }
+  
+  const getAddonSlab = (addon: string) => {
+    switch (addon) {
+      case 'plastic_restoration': return { min: 300, max: 500 };
+      case 'ceramic_coating': return { min: 2000, max: 2000 };
+      case 'glass_coating': return { min: 300, max: 1000 };
+      case 'scratch_removal': return { min: 50, max: 9999 };
+      case 'engine_bay': return { min: 300, max: 1000 };
+      case 'headlight_restoration': return { min: 799, max: 2000 };
+      case 'tyre_polish': return { min: 100, max: 100 };
+      default: return { min: 0, max: 99999 };
+    }
+  };
+  const slab = getAddonSlab(selectedAddon);
+
   const subTotal = basePrice + vehicleAddon + (Number(addonAmount) || 0);
-  const finalTotal = subTotal - (subTotal * (Number(discount) || 0) / 100);
+  const finalTotal = discountType === 'percent' 
+    ? subTotal - (subTotal * (Number(discount) || 0) / 100)
+    : subTotal - (Number(discount) || 0);
 
   useEffect(() => {
     fetchCustomers();
@@ -160,6 +183,10 @@ export default function Customers() {
                       <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-500/10 text-emerald-500 text-[10px] font-bold uppercase">
                         <CheckCircle2 size={10} /> Completed
                       </span>
+                    ) : customer.status === 'cancelled' ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-rose-500/10 text-rose-500 text-[10px] font-bold uppercase">
+                        <X size={10} /> Cancelled
+                      </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-amber-500/10 text-amber-500 text-[10px] font-bold uppercase">
                         <Clock size={10} /> Ongoing
@@ -168,6 +195,15 @@ export default function Customers() {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {customer.status !== 'completed' && customer.status !== 'cancelled' && (
+                        <button 
+                          onClick={() => setCompletingCustomer(customer)}
+                          className="p-2 hover:bg-emerald-500/10 rounded-lg text-white/60 hover:text-emerald-500"
+                          title="Mark as Completed"
+                        >
+                          <CheckCircle2 size={16} />
+                        </button>
+                      )}
                       <button onClick={() => toast.success('Viewing customer details')} className="p-2 hover:bg-white/5 rounded-lg text-white/60 hover:text-white"><Eye size={16} /></button>
                       <button 
                         onClick={() => setEditingCustomer(customer)}
@@ -240,23 +276,16 @@ export default function Customers() {
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-white/60">Car Status</label>
-                  <select className="input-field bg-dryft-dark">
-                    <option>Ongoing</option>
-                    <option>Completed</option>
-                  </select>
-                </div>
-                <div className="space-y-2">
                   <label className="text-sm font-medium text-white/60">KOT / Ticket No.</label>
                   <input type="text" className="input-field bg-white/5 text-white/60 cursor-not-allowed" value={generatedKot} readOnly />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-white/60">Payment Method</label>
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-sm font-medium text-white/60">Payment Collection</label>
                   <select className="input-field bg-dryft-dark">
-                    <option>Cash</option>
-                    <option>Card / POS</option>
-                    <option>UPI / Online</option>
-                    <option>Pending Payment</option>
+                    <option value="pending">To be collected / Pending</option>
+                    <option value="cash">Paid - Cash</option>
+                    <option value="card">Paid - Card / POS</option>
+                    <option value="upi">Paid - UPI / Online</option>
                   </select>
                 </div>
                 <div className="space-y-2 md:col-span-2 border-t border-white/10 pt-4 mt-2">
@@ -279,7 +308,10 @@ export default function Customers() {
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-white/60">Select Add-on Service</label>
-                  <select className="input-field bg-dryft-dark" value={selectedAddon} onChange={(e) => setSelectedAddon(e.target.value)}>
+                  <select className="input-field bg-dryft-dark" value={selectedAddon} onChange={(e) => {
+                    setSelectedAddon(e.target.value);
+                    setAddonAmount('');
+                  }}>
                     <option value="">None</option>
                     <option value="plastic_restoration">Plastic Restoration (₹300 - ₹500)</option>
                     <option value="ceramic_coating">Hybrid Ceramic Coating w/ Warranty (₹2000)</option>
@@ -292,29 +324,34 @@ export default function Customers() {
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-white/60">Add-on Amount (₹)</label>
-                  <input type="number" className="input-field" placeholder="Enter finalized amount..." value={addonAmount} onChange={(e) => setAddonAmount(e.target.value === '' ? '' : Number(e.target.value))} />
+                  <input type="number" className="input-field" placeholder={selectedAddon ? `Enter amount (₹${slab.min} - ₹${slab.max})` : "Enter finalized amount..."} min={selectedAddon ? slab.min : undefined} max={selectedAddon ? slab.max : undefined} value={addonAmount} onChange={(e) => setAddonAmount(e.target.value === '' ? '' : Number(e.target.value))} required={!!selectedAddon} />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-white/60">Discount Applied (%)</label>
-                  <div className="relative">
-                    <input type="number" className="input-field" placeholder="0" min="0" max="100" value={discount} onChange={(e) => setDiscount(e.target.value === '' ? '' : Number(e.target.value))} />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40">%</span>
+                <div className="space-y-2 md:col-span-2 grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-white/60">Discount Type</label>
+                    <select className="input-field bg-dryft-dark" value={discountType} onChange={(e: any) => setDiscountType(e.target.value)}>
+                      <option value="percent">Percentage (%)</option>
+                      <option value="fixed">Fixed Amount (₹)</option>
+                    </select>
                   </div>
+                  <div>
+                    <label className="text-sm font-medium text-white/60">Discount Value</label>
+                    <input type="number" className="input-field" placeholder="0" min="0" value={discount} onChange={(e) => setDiscount(e.target.value === '' ? '' : Number(e.target.value))} />
+                  </div>
+                  {Number(discount) > 0 && (
+                    <div className="col-span-2">
+                      <label className="text-sm font-medium text-white/60">Discount Special Note <span className="text-rose-500">*</span></label>
+                      <input type="text" className="input-field border-rose-500/50" placeholder="Required reason for discount..." value={discountNote} onChange={(e) => setDiscountNote(e.target.value)} required />
+                    </div>
+                  )}
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-2 md:col-span-2">
                   <label className="text-sm font-medium text-white/60">Final Amount (₹)</label>
                   <input type="text" className="input-field bg-emerald-500/10 border-emerald-500/30 text-emerald-400 font-bold" value={`₹${finalTotal.toFixed(2)}`} readOnly />
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-white/60">Car Photo</label>
-                <div className="border-2 border-dashed border-white/10 rounded-xl p-8 text-center hover:border-dryft-beige/50 transition-colors cursor-pointer group">
-                  <ImageIcon size={32} className="mx-auto mb-3 text-white/20 group-hover:text-dryft-beige" />
-                  <p className="text-sm text-white/40 group-hover:text-white">Click to upload or drag and drop car photo</p>
-                  <p className="text-xs text-white/20 mt-1">PNG, JPG up to 5MB</p>
-                </div>
-              </div>
+
 
               <div className="space-y-2">
                 <label className="text-sm font-medium text-white/60">Notes</label>
@@ -376,23 +413,16 @@ export default function Customers() {
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-white/60">Car Status</label>
-                  <select className="input-field bg-dryft-dark" defaultValue={editingCustomer.status === 'pending' ? 'ongoing' : editingCustomer.status}>
-                    <option value="ongoing">Ongoing</option>
-                    <option value="completed">Completed</option>
-                  </select>
-                </div>
-                <div className="space-y-2">
                   <label className="text-sm font-medium text-white/60">KOT / Ticket No.</label>
                   <input type="text" className="input-field bg-white/5 text-white/60 cursor-not-allowed" defaultValue={editingCustomer.kot || generatedKot} readOnly />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-white/60">Payment Method</label>
-                  <select className="input-field bg-dryft-dark" defaultValue={editingCustomer.paymentMethod || 'Cash'}>
-                    <option value="Cash">Cash</option>
-                    <option value="Card / POS">Card / POS</option>
-                    <option value="UPI / Online">UPI / Online</option>
-                    <option value="Pending Payment">Pending Payment</option>
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-sm font-medium text-white/60">Payment Collection</label>
+                  <select className="input-field bg-dryft-dark" defaultValue={editingCustomer.paymentMethod || 'pending'}>
+                    <option value="pending">To be collected / Pending</option>
+                    <option value="cash">Paid - Cash</option>
+                    <option value="card">Paid - Card / POS</option>
+                    <option value="upi">Paid - UPI / Online</option>
                   </select>
                 </div>
                 <div className="space-y-2 md:col-span-2 border-t border-white/10 pt-4 mt-2">
@@ -415,7 +445,10 @@ export default function Customers() {
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-white/60">Select Add-on Service</label>
-                  <select className="input-field bg-dryft-dark" value={selectedAddon} onChange={(e) => setSelectedAddon(e.target.value)}>
+                  <select className="input-field bg-dryft-dark" value={selectedAddon} onChange={(e) => {
+                    setSelectedAddon(e.target.value);
+                    setAddonAmount('');
+                  }}>
                     <option value="">None</option>
                     <option value="plastic_restoration">Plastic Restoration (₹300 - ₹500)</option>
                     <option value="ceramic_coating">Hybrid Ceramic Coating w/ Warranty (₹2000)</option>
@@ -428,16 +461,28 @@ export default function Customers() {
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-white/60">Add-on Amount (₹)</label>
-                  <input type="number" className="input-field" placeholder="Enter finalized amount..." value={addonAmount} onChange={(e) => setAddonAmount(e.target.value === '' ? '' : Number(e.target.value))} />
+                  <input type="number" className="input-field" placeholder={selectedAddon ? `Enter amount (₹${slab.min} - ₹${slab.max})` : "Enter finalized amount..."} min={selectedAddon ? slab.min : undefined} max={selectedAddon ? slab.max : undefined} value={addonAmount} onChange={(e) => setAddonAmount(e.target.value === '' ? '' : Number(e.target.value))} required={!!selectedAddon} />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-white/60">Discount Applied (%)</label>
-                  <div className="relative">
-                    <input type="number" className="input-field" placeholder="0" min="0" max="100" value={discount} onChange={(e) => setDiscount(e.target.value === '' ? '' : Number(e.target.value))} />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40">%</span>
+                <div className="space-y-2 md:col-span-2 grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-white/60">Discount Type</label>
+                    <select className="input-field bg-dryft-dark" value={discountType} onChange={(e: any) => setDiscountType(e.target.value)}>
+                      <option value="percent">Percentage (%)</option>
+                      <option value="fixed">Fixed Amount (₹)</option>
+                    </select>
                   </div>
+                  <div>
+                    <label className="text-sm font-medium text-white/60">Discount Value</label>
+                    <input type="number" className="input-field" placeholder="0" min="0" value={discount} onChange={(e) => setDiscount(e.target.value === '' ? '' : Number(e.target.value))} />
+                  </div>
+                  {Number(discount) > 0 && (
+                    <div className="col-span-2">
+                      <label className="text-sm font-medium text-white/60">Discount Special Note <span className="text-rose-500">*</span></label>
+                      <input type="text" className="input-field border-rose-500/50" placeholder="Required reason for discount..." value={discountNote} onChange={(e) => setDiscountNote(e.target.value)} required />
+                    </div>
+                  )}
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-2 md:col-span-2">
                   <label className="text-sm font-medium text-white/60">Final Amount (₹)</label>
                   <input type="text" className="input-field bg-emerald-500/10 border-emerald-500/30 text-emerald-400 font-bold" value={`₹${finalTotal.toFixed(2)}`} readOnly />
                 </div>
@@ -454,6 +499,45 @@ export default function Customers() {
                 </button>
                 <button type="submit" className="flex-1 btn-primary py-3">
                   Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* Complete Service Modal */}
+      {completingCustomer && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="glass-panel w-full max-w-md p-8">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold text-white">Finalize & Complete Job</h2>
+              <button onClick={() => setCompletingCustomer(null)} className="text-white/40 hover:text-white">
+                <X size={24} />
+              </button>
+            </div>
+            <form className="space-y-6" onSubmit={(e) => {
+              e.preventDefault();
+              toast.success(`Job Completed! Payment: ${completionPayment}`);
+              setCompletingCustomer(null);
+            }}>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-white/60">Confirm Payment Method</label>
+                <select className="input-field bg-dryft-dark" value={completionPayment} onChange={(e) => setCompletionPayment(e.target.value)}>
+                  <option value="Cash">Cash Collected</option>
+                  <option value="Card / POS">Card / POS</option>
+                  <option value="UPI / Online">UPI / Online</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-white/60">Final Completion Note (Optional)</label>
+                <textarea className="input-field min-h-[100px]" placeholder="Add any notes on car condition upon handover..." value={completionNotes} onChange={(e) => setCompletionNotes(e.target.value)}></textarea>
+              </div>
+              <div className="flex gap-4 pt-4">
+                <button type="button" onClick={() => setCompletingCustomer(null)} className="flex-1 px-4 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-colors">
+                  Cancel
+                </button>
+                <button type="submit" className="flex-1 btn-primary py-3">
+                  Mark as Finished
                 </button>
               </div>
             </form>
