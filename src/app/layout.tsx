@@ -5,9 +5,24 @@ import { Toaster } from 'react-hot-toast';
 
 const inter = Inter({ subsets: ["latin"] });
 
+import type { Viewport } from "next";
+
+export const viewport: Viewport = {
+  themeColor: "#050505",
+};
+
 export const metadata: Metadata = {
   title: "DRYFT | Premium Car Care Admin",
   description: "Advanced SaaS Management System for DRYFT",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "DRYFT Admin",
+  },
+  formatDetection: {
+    telephone: false,
+  },
 };
 
 export default function RootLayout({
