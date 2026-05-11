@@ -41,7 +41,6 @@ export async function POST(request: Request) {
       data: {
         username,
         passwordHash,
-        email: email || `${username}@dryft.com`,
         roleId: role.id,
         franchiseId: franchiseId ? parseInt(franchiseId) : null,
         status: 'active',
