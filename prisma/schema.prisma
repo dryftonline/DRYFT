@@ -172,7 +172,10 @@ model StaffAttendance {
   id          Int      @id @default(autoincrement())
   staffId     Int
   date        DateTime @default(now())
-  status      String   // "present", "absent", "half-day"
+  status      String   // "present", "absent", "half-day", "late"
+  photoData   String?  // Store base64 compressed image
+  latitude    Float?
+  longitude   Float?
   notes       String?
   
   staff       Staff    @relation(fields: [staffId], references: [id])

@@ -41,7 +41,7 @@ export default function StaffManagement() {
       const res = await fetch('/api/staff/attendance', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ staffId, status })
+        body: JSON.stringify({ staffId, overrideStatus: status })
       });
       if (res.ok) {
         toast.success(`Attendance marked as ${status}`);
@@ -132,25 +132,40 @@ export default function StaffManagement() {
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-col gap-2">
                         {todayAttendance === 'present' ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-500/10 text-emerald-500 text-[10px] font-bold uppercase">
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-500/10 text-emerald-500 text-[10px] font-bold uppercase w-fit">
                             <CheckCircle2 size={12} /> Present
                           </span>
                         ) : todayAttendance === 'absent' ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-rose-500/10 text-rose-500 text-[10px] font-bold uppercase">
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-rose-500/10 text-rose-500 text-[10px] font-bold uppercase w-fit">
                             <XCircle size={12} /> Absent
                           </span>
+                        ) : todayAttendance === 'late' ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-orange-500/10 text-orange-500 text-[10px] font-bold uppercase w-fit">
+                            <Clock size={12} /> Late
+                          </span>
                         ) : todayAttendance === 'half-day' ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-amber-500/10 text-amber-500 text-[10px] font-bold uppercase">
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-amber-500/10 text-amber-500 text-[10px] font-bold uppercase w-fit">
                             <Clock size={12} /> Half Day
                           </span>
                         ) : (
                           <div className="flex gap-1">
                             <button onClick={() => markAttendance(member.id, 'present')} className="px-2 py-1 text-[10px] font-bold rounded bg-white/5 hover:bg-emerald-500/20 text-white/60 hover:text-emerald-500 transition-colors">P</button>
                             <button onClick={() => markAttendance(member.id, 'absent')} className="px-2 py-1 text-[10px] font-bold rounded bg-white/5 hover:bg-rose-500/20 text-white/60 hover:text-rose-500 transition-colors">A</button>
+                            <button onClick={() => markAttendance(member.id, 'late')} className="px-2 py-1 text-[10px] font-bold rounded bg-white/5 hover:bg-orange-500/20 text-white/60 hover:text-orange-500 transition-colors">L</button>
                             <button onClick={() => markAttendance(member.id, 'half-day')} className="px-2 py-1 text-[10px] font-bold rounded bg-white/5 hover:bg-amber-500/20 text-white/60 hover:text-amber-500 transition-colors">H</button>
                           </div>
+                        )}
+                        {member.attendances?.[0]?.photoData && (
+                          <a href={member.attendances[0].photoData} target="_blank" rel="noreferrer" className="text-[10px] text-blue-400 hover:underline">
+                            View Photo
+                          </a>
+                        )}
+                        {member.attendances?.[0]?.latitude && (
+                          <a href={`https://maps.google.com/?q=${member.attendances[0].latitude},${member.attendances[0].longitude}`} target="_blank" rel="noreferrer" className="text-[10px] text-blue-400 hover:underline">
+                            View Location
+                          </a>
                         )}
                       </div>
                     </td>
