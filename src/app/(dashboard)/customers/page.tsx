@@ -21,6 +21,7 @@ export default function Customers() {
   const [editingCustomer, setEditingCustomer] = useState<any>(null);
   const [customers, setCustomers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // POS Pricing State
   const [selectedService, setSelectedService] = useState('exterior');
@@ -254,6 +255,8 @@ export default function Customers() {
 
             <form className="space-y-6" onSubmit={async (e) => {
               e.preventDefault();
+              if (isSubmitting) return;
+              setIsSubmitting(true);
               const form = e.currentTarget as HTMLFormElement;
               const name = (form.querySelector('input[placeholder="Full Name"]') as HTMLInputElement).value;
               const phone = (form.querySelector('input[placeholder="+1..."]') as HTMLInputElement).value;
@@ -282,6 +285,8 @@ export default function Customers() {
                 } else throw new Error();
               } catch (error) {
                 toast.error('Failed to save customer');
+              } finally {
+                setIsSubmitting(false);
               }
             }}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -393,11 +398,11 @@ export default function Customers() {
               </div>
 
               <div className="flex gap-4 pt-4">
-                <button type="button" onClick={() => setShowAddModal(false)} className="flex-1 px-4 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-colors">
+                <button type="button" onClick={() => setShowAddModal(false)} disabled={isSubmitting} className="flex-1 px-4 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                   Cancel
                 </button>
-                <button type="submit" className="flex-1 btn-primary py-3">
-                  Upload Record
+                <button type="submit" disabled={isSubmitting} className="flex-1 btn-primary py-3 disabled:opacity-50 disabled:cursor-not-allowed">
+                  {isSubmitting ? 'Uploading...' : 'Upload Record'}
                 </button>
               </div>
             </form>
@@ -549,10 +554,34 @@ export default function Customers() {
                 <X size={24} />
               </button>
             </div>
-            <form className="space-y-6" onSubmit={(e) => {
+            <form className="space-y-6" onSubmit={async (e) => {
               e.preventDefault();
-              toast.success(`Job Completed! Payment: ${completionPayment}`);
-              setCompletingCustomer(null);
+              if (isSubmitting) return;
+              setIsSubmitting(true);
+              try {
+                const res = await fetch(`/api/customers/${completingCustomer.id}`, {
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    status: 'completed',
+                    paymentMethod: completionPayment,
+                    notes: completionNotes 
+                      ? `${completingCustomer.notes || ''}\n\nCompletion Note: ${completionNotes}`.trim() 
+                      : completingCustomer.notes
+                  })
+                });
+                if (res.ok) {
+                  toast.success(`Job Completed! Payment: ${completionPayment}`);
+                  setCompletingCustomer(null);
+                  fetchCustomers();
+                } else {
+                  throw new Error();
+                }
+              } catch (error) {
+                toast.error('Failed to complete job');
+              } finally {
+                setIsSubmitting(false);
+              }
             }}>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-white/60">Confirm Payment Method</label>
@@ -570,8 +599,8 @@ export default function Customers() {
                 <button type="button" onClick={() => setCompletingCustomer(null)} className="flex-1 px-4 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-colors">
                   Cancel
                 </button>
-                <button type="submit" className="flex-1 btn-primary py-3">
-                  Mark as Finished
+                <button type="submit" disabled={isSubmitting} className="flex-1 btn-primary py-3 disabled:opacity-50 disabled:cursor-not-allowed">
+                  {isSubmitting ? 'Processing...' : 'Mark as Finished'}
                 </button>
               </div>
             </form>
