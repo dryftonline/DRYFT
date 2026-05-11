@@ -11,14 +11,26 @@ export async function POST(request: Request) {
 
     // Auto calculate status if not overridden by admin
     let status = overrideStatus;
+    let minutesLate = 0;
+    let fineAmount = 0;
+    const FINE_PER_MINUTE = 5; // ₹5 fine per minute late
+
     if (!status) {
-      const currentHour = new Date().getHours();
-      if (currentHour < 9) {
-        status = 'present'; // Before 9 AM
-      } else if (currentHour < 12) {
-        status = 'late'; // Between 9 AM and 12 PM
+      const now = new Date();
+      const currentHour = now.getHours();
+      const currentMinute = now.getMinutes();
+      const timeInMinutes = currentHour * 60 + currentMinute;
+      const nineAMInMinutes = 9 * 60; // 540 minutes
+      const twelvePMInMinutes = 12 * 60; // 720 minutes
+
+      if (timeInMinutes <= nineAMInMinutes) {
+        status = 'present'; 
+      } else if (timeInMinutes < twelvePMInMinutes) {
+        status = 'late';
+        minutesLate = timeInMinutes - nineAMInMinutes;
+        fineAmount = minutesLate * FINE_PER_MINUTE;
       } else {
-        status = 'half-day'; // After 12 PM
+        status = 'half-day'; 
       }
     }
 
@@ -41,7 +53,9 @@ export async function POST(request: Request) {
           notes,
           ...(photoData && { photoData }),
           ...(latitude && { latitude }),
-          ...(longitude && { longitude })
+          ...(longitude && { longitude }),
+          minutesLate,
+          fineAmount
         }
       });
     } else {
@@ -52,7 +66,9 @@ export async function POST(request: Request) {
           notes,
           photoData,
           latitude,
-          longitude
+          longitude,
+          minutesLate,
+          fineAmount
         }
       });
     }

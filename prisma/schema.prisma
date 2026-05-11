@@ -176,6 +176,8 @@ model StaffAttendance {
   photoData   String?  // Store base64 compressed image
   latitude    Float?
   longitude   Float?
+  minutesLate Int      @default(0)
+  fineAmount  Float    @default(0)
   notes       String?
   
   staff       Staff    @relation(fields: [staffId], references: [id])

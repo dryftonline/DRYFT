@@ -142,9 +142,16 @@ export default function StaffManagement() {
                             <XCircle size={12} /> Absent
                           </span>
                         ) : todayAttendance === 'late' ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-orange-500/10 text-orange-500 text-[10px] font-bold uppercase w-fit">
-                            <Clock size={12} /> Late
-                          </span>
+                          <div className="flex flex-col gap-1">
+                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-orange-500/10 text-orange-500 text-[10px] font-bold uppercase w-fit">
+                              <Clock size={12} /> Late
+                            </span>
+                            {member.attendances?.[0]?.minutesLate > 0 && (
+                              <span className="text-[10px] text-orange-400">
+                                {member.attendances[0].minutesLate} mins late (Fine: ₹{member.attendances[0].fineAmount})
+                              </span>
+                            )}
+                          </div>
                         ) : todayAttendance === 'half-day' ? (
                           <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-amber-500/10 text-amber-500 text-[10px] font-bold uppercase w-fit">
                             <Clock size={12} /> Half Day
