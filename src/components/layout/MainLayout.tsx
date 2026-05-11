@@ -42,15 +42,20 @@ const SidebarLink = ({ href, icon: Icon, children, active, onClick }: any) => (
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const { user, logout, isAuthenticated } = useAuthStore();
   const pathname = usePathname();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (mounted && !isAuthenticated) {
       router.push('/login');
     }
-  }, [isAuthenticated, router]);
+  }, [mounted, isAuthenticated, router]);
 
   const handleLogout = () => {
     logout();
@@ -68,6 +73,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     { label: 'Settings', icon: Settings, path: '/settings' },
   ];
 
+  if (!mounted) return null;
   if (!isAuthenticated) return null;
 
   return (
