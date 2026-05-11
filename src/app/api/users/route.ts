@@ -17,10 +17,16 @@ export async function GET() {
   }
 }
 
+import bcrypt from 'bcryptjs';
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { username, email, password, roleName, franchiseId } = body;
+    const { username, email, password, roleName, franchiseId, accessibleModules } = body;
+
+    if (!password) {
+      return NextResponse.json({ error: 'Password is required' }, { status: 400 });
+    }
 
     // Get role ID
     const role = await prisma.role.findUnique({ where: { name: roleName || 'Operator' } });
@@ -28,19 +34,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Role not found' }, { status: 400 });
     }
 
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(password, salt);
+
     const user = await prisma.user.create({
       data: {
         username,
-        // In a real app, hash the password! For this demo we'll use a placeholder or plain (not recommended for production)
-        passwordHash: password, // TODO: bcrypt hash
+        passwordHash,
         email: email || `${username}@dryft.com`,
         roleId: role.id,
         franchiseId: franchiseId ? parseInt(franchiseId) : null,
-        status: 'active'
+        status: 'active',
+        accessibleModules: accessibleModules || ['*']
       }
     });
 
-    return NextResponse.json(user);
+    return NextResponse.json({ id: user.id, username: user.username, accessibleModules: user.accessibleModules });
   } catch (error: any) {
     console.error('Error creating user:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

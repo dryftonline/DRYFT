@@ -30,7 +30,8 @@ export async function POST(request: Request) {
         id: user.id, 
         username: user.username, 
         role: user.role.name, 
-        franchiseId: user.franchiseId 
+        franchiseId: user.franchiseId,
+        accessibleModules: user.accessibleModules 
       },
       process.env.JWT_SECRET || 'fallback-secret',
       { expiresIn: '24h' }
@@ -43,7 +44,8 @@ export async function POST(request: Request) {
         username: user.username,
         role: user.role.name,
         franchise: user.franchise ? user.franchise.name : null,
-        franchiseId: user.franchiseId
+        franchiseId: user.franchiseId,
+        accessibleModules: user.accessibleModules
       }
     });
   } catch (error: any) {

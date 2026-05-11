@@ -247,15 +247,17 @@ export default function UserManagement() {
               </button>
             </div>
 
-            <form className="space-y-6" onSubmit={async (e) => {
+              <form className="space-y-6" onSubmit={async (e) => {
               e.preventDefault();
               const formData = new FormData(e.currentTarget);
+              const modules = formData.getAll('modules') as string[];
               const data = {
                 username: formData.get('username'),
                 email: formData.get('email'),
                 password: formData.get('password'),
                 roleName: formData.get('roleName'),
                 franchiseId: formData.get('franchiseId'),
+                accessibleModules: modules.length > 0 ? modules : ['*'],
               };
               try {
                 const res = await fetch('/api/users', {
@@ -352,6 +354,23 @@ export default function UserManagement() {
                         <option key={f.id} value={f.id}>{f.name}</option>
                       ))}
                     </select>
+                  </div>
+                </div>
+
+                <div className="space-y-2 pt-2 border-t border-white/10">
+                  <label className="text-sm font-medium text-white/60">Accessible Modules</label>
+                  <p className="text-[10px] text-white/40 mb-2">Select which pages this user can view. Leave all unchecked for full access.</p>
+                  <div className="grid grid-cols-2 gap-2 mt-2">
+                    {[
+                      'Customers', 'Franchises', 'Stock Updates', 
+                      'Staff Management', 'Notifications', 'System Users', 
+                      'Reports', 'Settings'
+                    ].map(module => (
+                      <label key={module} className="flex items-center gap-2 text-sm text-white/80 cursor-pointer p-2 hover:bg-white/5 rounded-md">
+                        <input type="checkbox" name="modules" value={module} className="rounded border-white/20 bg-white/5 text-emerald-500 focus:ring-emerald-500" />
+                        {module}
+                      </label>
+                    ))}
                   </div>
                 </div>
               </div>

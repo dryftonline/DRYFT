@@ -62,7 +62,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     router.push('/login');
   };
 
-  const navItems = [
+  const allNavItems = [
     { label: 'Dashboard', icon: LayoutDashboard, path: '/' },
     { label: 'Customers', icon: Users, path: '/customers' },
     { label: 'Franchises', icon: Store, path: '/franchises' },
@@ -73,6 +73,13 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     { label: 'Reports', icon: BarChart3, path: '/reports' },
     { label: 'Settings', icon: Settings, path: '/settings' },
   ];
+
+  const userModules = user?.accessibleModules || ['*'];
+  const navItems = allNavItems.filter(item => 
+    userModules.includes('*') || 
+    userModules.includes(item.label) || 
+    item.label === 'Dashboard'
+  );
 
   if (!mounted) return null;
   if (!isAuthenticated) return null;

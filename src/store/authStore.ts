@@ -7,6 +7,7 @@ interface User {
   role: string;
   franchise: string | null;
   franchiseId: number | null;
+  accessibleModules?: string[];
 }
 
 interface AuthState {
