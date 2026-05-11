@@ -28,10 +28,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Password is required' }, { status: 400 });
     }
 
-    // Get role ID
-    const role = await prisma.role.findUnique({ where: { name: roleName || 'Operator' } });
+    // Get role ID or create if not exists
+    let role = await prisma.role.findUnique({ where: { name: roleName || 'Operator' } });
     if (!role) {
-      return NextResponse.json({ error: 'Role not found' }, { status: 400 });
+      role = await prisma.role.create({ data: { name: roleName || 'Operator' } });
     }
 
     const salt = await bcrypt.genSalt(10);
