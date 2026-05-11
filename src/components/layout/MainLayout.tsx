@@ -67,8 +67,9 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     { label: 'Customers', icon: Users, path: '/customers' },
     { label: 'Franchises', icon: Store, path: '/franchises' },
     { label: 'Stock Updates', icon: Box, path: '/stock' },
+    { label: 'Staff Management', icon: Users, path: '/staff' },
     { label: 'Notifications', icon: Bell, path: '/notifications' },
-    { label: 'User Management', icon: UserCog, path: '/users' },
+    { label: 'System Users', icon: UserCog, path: '/users' },
     { label: 'Reports', icon: BarChart3, path: '/reports' },
     { label: 'Settings', icon: Settings, path: '/settings' },
   ];

@@ -22,6 +22,7 @@ export default function Customers() {
   const [customers, setCustomers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [staffList, setStaffList] = useState<any[]>([]);
 
   // POS Pricing State
   const [selectedService, setSelectedService] = useState('exterior');
@@ -36,6 +37,7 @@ export default function Customers() {
   const [completingCustomer, setCompletingCustomer] = useState<any>(null);
   const [completionNotes, setCompletionNotes] = useState('');
   const [completionPayment, setCompletionPayment] = useState('Cash');
+  const [completionStaffId, setCompletionStaffId] = useState('');
 
   let basePrice = selectedService === 'exterior' ? 250 : selectedService === 'interior_exterior' ? 500 : 0;
   let vehicleAddon = 0;
@@ -68,7 +70,16 @@ export default function Customers() {
 
   useEffect(() => {
     fetchCustomers();
+    fetchStaff();
   }, []);
+
+  const fetchStaff = async () => {
+    try {
+      const res = await fetch('/api/staff');
+      const data = await res.json();
+      if (res.ok) setStaffList(data);
+    } catch (e) {}
+  };
 
   const fetchCustomers = async () => {
     try {
@@ -565,6 +576,7 @@ export default function Customers() {
                   body: JSON.stringify({
                     status: 'completed',
                     paymentMethod: completionPayment,
+                    staffId: completionStaffId ? parseInt(completionStaffId) : null,
                     notes: completionNotes 
                       ? `${completingCustomer.notes || ''}\n\nCompletion Note: ${completionNotes}`.trim() 
                       : completingCustomer.notes
@@ -573,6 +585,7 @@ export default function Customers() {
                 if (res.ok) {
                   toast.success(`Job Completed! Payment: ${completionPayment}`);
                   setCompletingCustomer(null);
+                  setCompletionStaffId('');
                   fetchCustomers();
                 } else {
                   throw new Error();
@@ -589,6 +602,15 @@ export default function Customers() {
                   <option value="Cash">Cash Collected</option>
                   <option value="Card / POS">Card / POS</option>
                   <option value="UPI / Online">UPI / Online</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-white/60">Assigned Staff</label>
+                <select className="input-field bg-dryft-dark" value={completionStaffId} onChange={(e) => setCompletionStaffId(e.target.value)}>
+                  <option value="">-- None --</option>
+                  {staffList.map(s => (
+                    <option key={s.id} value={s.id}>{s.name} ({s.role})</option>
+                  ))}
                 </select>
               </div>
               <div className="space-y-2">

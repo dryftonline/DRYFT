@@ -60,6 +60,7 @@ model Franchise {
   stockItems    FranchiseStock[]
   notifications NotificationRecipient[]
   users         User[]
+  staff         Staff[]
 }
 
 model Customer {
@@ -86,6 +87,8 @@ model Customer {
   created_at      DateTime  @default(now())
   franchise       Franchise @relation(fields: [franchiseId], references: [id])
   uploader        User      @relation("UploadedBy", fields: [uploadedBy], references: [id])
+  staffId         Int?
+  staff           Staff?    @relation("StaffJobs", fields: [staffId], references: [id])
 }
 
 model StockItem {
@@ -149,4 +152,28 @@ model AuditLog {
   resource   String
   resourceId String?
   created_at DateTime @default(now())
+}
+
+model Staff {
+  id          Int               @id @default(autoincrement())
+  name        String
+  phone       String?
+  role        String            @default("Washer")
+  franchiseId Int
+  status      String            @default("active")
+  created_at  DateTime          @default(now())
+  
+  franchise   Franchise         @relation(fields: [franchiseId], references: [id])
+  attendances StaffAttendance[]
+  jobsDone    Customer[]        @relation("StaffJobs")
+}
+
+model StaffAttendance {
+  id          Int      @id @default(autoincrement())
+  staffId     Int
+  date        DateTime @default(now())
+  status      String   // "present", "absent", "half-day"
+  notes       String?
+  
+  staff       Staff    @relation(fields: [staffId], references: [id])
 }
