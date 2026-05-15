@@ -29,6 +29,7 @@ export default function UserManagement() {
   const [franchises, setFranchises] = useState<any[]>([]);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [accountType, setAccountType] = useState<'system' | 'staff'>('system');
 
   useEffect(() => {
     fetchUsers();
@@ -250,6 +251,35 @@ export default function UserManagement() {
               <form className="space-y-6" onSubmit={async (e) => {
               e.preventDefault();
               const formData = new FormData(e.currentTarget);
+              
+              if (accountType === 'staff') {
+                const data = {
+                  name: formData.get('fullName'),
+                  phone: formData.get('phone'),
+                  role: formData.get('roleName'),
+                  franchiseId: formData.get('franchiseId'),
+                };
+
+                try {
+                  const res = await fetch('/api/staff', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data),
+                  });
+                  if (res.ok) {
+                    toast.success('Staff member added successfully!');
+                    setShowAddModal(false);
+                    // No need to fetchUsers as staff aren't in this list
+                  } else {
+                    const error = await res.json();
+                    toast.error(error.error || 'Failed to add staff');
+                  }
+                } catch (error) {
+                  toast.error('Failed to add staff');
+                }
+                return;
+              }
+
               const modules = formData.getAll('modules') as string[];
               const data = {
                 username: formData.get('username'),
@@ -268,12 +298,39 @@ export default function UserManagement() {
                   toast.success('User account created successfully!');
                   setShowAddModal(false);
                   fetchUsers();
+                } else {
+                  const error = await res.json();
+                  toast.error(error.error || 'Failed to create user');
                 }
               } catch (error) {
                 toast.error('Failed to create user');
               }
             }}>
               <div className="space-y-4">
+                {/* Account Type Toggle */}
+                <div className="flex bg-white/5 p-1 rounded-xl border border-white/10 mb-6">
+                  <button
+                    type="button"
+                    onClick={() => setAccountType('system')}
+                    className={cn(
+                      "flex-1 py-2 text-sm font-bold rounded-lg transition-all",
+                      accountType === 'system' ? "bg-dryft-beige text-dryft-dark shadow-lg" : "text-white/40 hover:text-white"
+                    )}
+                  >
+                    System User
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAccountType('staff')}
+                    className={cn(
+                      "flex-1 py-2 text-sm font-bold rounded-lg transition-all",
+                      accountType === 'staff' ? "bg-dryft-beige text-dryft-dark shadow-lg" : "text-white/40 hover:text-white"
+                    )}
+                  >
+                    Staff Member
+                  </button>
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-white/60">Full Name</label>
@@ -282,74 +339,96 @@ export default function UserManagement() {
                       <input type="text" name="fullName" className="input-field pl-10" placeholder="John Doe" required />
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-white/60">Username</label>
-                    <input type="text" name="username" className="input-field" placeholder="johndoe" required />
-                  </div>
+                  {accountType === 'system' ? (
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-white/60">Username</label>
+                      <input type="text" name="username" className="input-field" placeholder="johndoe" required />
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-white/60">Phone Number</label>
+                      <input type="text" name="phone" className="input-field" placeholder="+91..." required />
+                    </div>
+                  )}
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-white/60">Email Address</label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" size={18} />
-                    <input type="email" name="email" className="input-field pl-10" placeholder="john@dryft.com" required />
-                  </div>
-                </div>
+                {accountType === 'system' && (
+                  <>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-white/60">Email Address</label>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" size={18} />
+                        <input type="email" name="email" className="input-field pl-10" placeholder="john@dryft.com" required />
+                      </div>
+                    </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-white/60">Password</label>
-                    <div className="relative">
-                      <input 
-                        type={showPassword ? "text" : "password"} 
-                        name="password" 
-                        className="input-field pr-10" 
-                        placeholder="••••••••" 
-                        required 
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 bg-black text-white p-1 rounded-md hover:bg-black/80 transition-colors"
-                      >
-                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                      </button>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-white/60">Password</label>
+                        <div className="relative">
+                          <input 
+                            type={showPassword ? "text" : "password"} 
+                            name="password" 
+                            className="input-field pr-10" 
+                            placeholder="••••••••" 
+                            required 
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 bg-black text-white p-1 rounded-md hover:bg-black/80 transition-colors"
+                          >
+                            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                          </button>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-white/60">Confirm Password</label>
+                        <div className="relative">
+                          <input 
+                            type={showConfirmPassword ? "text" : "password"} 
+                            name="confirmPassword" 
+                            className="input-field pr-10" 
+                            placeholder="••••••••" 
+                            required 
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 bg-black text-white p-1 rounded-md hover:bg-black/80 transition-colors"
+                          >
+                            {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-white/60">Confirm Password</label>
-                    <div className="relative">
-                      <input 
-                        type={showConfirmPassword ? "text" : "password"} 
-                        name="confirmPassword" 
-                        className="input-field pr-10" 
-                        placeholder="••••••••" 
-                        required 
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 bg-black text-white p-1 rounded-md hover:bg-black/80 transition-colors"
-                      >
-                        {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                  </>
+                )}
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-white/60">Role</label>
                     <select name="roleName" className="input-field bg-dryft-dark">
-                      <option>Operator</option>
-                      <option>Manager</option>
-                      <option>Super Admin</option>
+                      {accountType === 'system' ? (
+                        <>
+                          <option>Operator</option>
+                          <option>Manager</option>
+                          <option>Super Admin</option>
+                        </>
+                      ) : (
+                        <>
+                          <option value="Washer">Washer</option>
+                          <option value="Detailer">Detailer</option>
+                          <option value="Cleaner">Cleaner</option>
+                          <option value="Supervisor">Supervisor</option>
+                        </>
+                      )}
                     </select>
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-white/60">Franchise</label>
                     <select name="franchiseId" className="input-field bg-dryft-dark">
-                      <option value="">All Access</option>
+                      <option value="">{accountType === 'system' ? 'All Access' : 'Select Franchise'}</option>
                       {franchises.map(f => (
                         <option key={f.id} value={f.id}>{f.name}</option>
                       ))}
@@ -357,22 +436,24 @@ export default function UserManagement() {
                   </div>
                 </div>
 
-                <div className="space-y-2 pt-2 border-t border-white/10">
-                  <label className="text-sm font-medium text-white/60">Accessible Modules</label>
-                  <p className="text-[10px] text-white/40 mb-2">Select which pages this user can view. Leave all unchecked for full access.</p>
-                  <div className="grid grid-cols-2 gap-2 mt-2">
-                    {[
-                      'Customers', 'Franchises', 'Stock Updates', 
-                      'Staff Management', 'Notifications', 'System Users', 
-                      'Reports', 'Settings'
-                    ].map(module => (
-                      <label key={module} className="flex items-center gap-2 text-sm text-white/80 cursor-pointer p-2 hover:bg-white/5 rounded-md">
-                        <input type="checkbox" name="modules" value={module} className="rounded border-white/20 bg-white/5 text-emerald-500 focus:ring-emerald-500" />
-                        {module}
-                      </label>
-                    ))}
+                {accountType === 'system' && (
+                  <div className="space-y-2 pt-2 border-t border-white/10">
+                    <label className="text-sm font-medium text-white/60">Accessible Modules</label>
+                    <p className="text-[10px] text-white/40 mb-2">Select which pages this user can view. Leave all unchecked for full access.</p>
+                    <div className="grid grid-cols-2 gap-2 mt-2">
+                      {[
+                        'Customers', 'Franchises', 'Stock Updates', 
+                        'Staff Management', 'Notifications', 'System Users', 
+                        'Reports', 'Settings'
+                      ].map(module => (
+                        <label key={module} className="flex items-center gap-2 text-sm text-white/80 cursor-pointer p-2 hover:bg-white/5 rounded-md">
+                          <input type="checkbox" name="modules" value={module} className="rounded border-white/20 bg-white/5 text-emerald-500 focus:ring-emerald-500" />
+                          {module}
+                        </label>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
 
               <div className="flex gap-4 pt-4">
@@ -380,7 +461,7 @@ export default function UserManagement() {
                   Cancel
                 </button>
                 <button type="submit" className="flex-1 btn-primary py-3">
-                  Create Account
+                  {accountType === 'system' ? 'Create Account' : 'Add Staff Member'}
                 </button>
               </div>
             </form>

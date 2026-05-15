@@ -14,7 +14,6 @@ import { toast } from 'react-hot-toast';
 
 export default function StaffManagement() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [showAddModal, setShowAddModal] = useState(false);
   const [staff, setStaff] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -61,13 +60,6 @@ export default function StaffManagement() {
           <h1 className="text-2xl font-bold text-white">Staff Management</h1>
           <p className="text-white/40 text-sm">Manage staff attendance and track their work performance.</p>
         </div>
-        <button 
-          onClick={() => setShowAddModal(true)}
-          className="btn-primary flex items-center gap-2"
-        >
-          <Plus size={18} />
-          <span>Add New Staff</span>
-        </button>
       </div>
 
       {/* Filters & Search */}
@@ -192,76 +184,6 @@ export default function StaffManagement() {
         </div>
       </div>
 
-      {/* Add Staff Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="glass-panel w-full max-w-md p-8">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold text-white">Add New Staff</h2>
-              <button onClick={() => setShowAddModal(false)} className="text-white/40 hover:text-white">
-                <X size={24} />
-              </button>
-            </div>
-
-            <form className="space-y-6" onSubmit={async (e) => {
-              e.preventDefault();
-              if (isSubmitting) return;
-              setIsSubmitting(true);
-              
-              const form = e.currentTarget as HTMLFormElement;
-              const name = (form.elements.namedItem('name') as HTMLInputElement).value;
-              const phone = (form.elements.namedItem('phone') as HTMLInputElement).value;
-              const role = (form.elements.namedItem('role') as HTMLSelectElement).value;
-
-              try {
-                const res = await fetch('/api/staff', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ name, phone, role, franchiseId: 1 }) // Using 1 as fallback default
-                });
-                if (res.ok) {
-                  toast.success('Staff added successfully!');
-                  setShowAddModal(false);
-                  fetchStaff();
-                } else throw new Error();
-              } catch (error) {
-                toast.error('Failed to add staff');
-              } finally {
-                setIsSubmitting(false);
-              }
-            }}>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-white/60">Full Name</label>
-                  <input type="text" name="name" className="input-field" placeholder="John Doe" required />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-white/60">Phone Number</label>
-                  <input type="text" name="phone" className="input-field" placeholder="+1..." />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-white/60">Role</label>
-                  <select name="role" className="input-field bg-dryft-dark">
-                    <option value="Washer">Washer</option>
-                    <option value="Detailer">Detailer</option>
-                    <option value="Cleaner">Cleaner</option>
-                    <option value="Supervisor">Supervisor</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="flex gap-4 pt-4">
-                <button type="button" onClick={() => setShowAddModal(false)} disabled={isSubmitting} className="flex-1 px-4 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-colors disabled:opacity-50">
-                  Cancel
-                </button>
-                <button type="submit" disabled={isSubmitting} className="flex-1 btn-primary py-3 disabled:opacity-50">
-                  {isSubmitting ? 'Adding...' : 'Add Staff'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
