@@ -31,6 +31,7 @@ export async function POST(request: Request) {
         username: user.username, 
         role: user.role.name, 
         franchiseId: user.franchiseId,
+        staffId: user.staffId,
         accessibleModules: user.accessibleModules 
       },
       process.env.JWT_SECRET || 'fallback-secret',
@@ -45,6 +46,7 @@ export async function POST(request: Request) {
         role: user.role.name,
         franchise: user.franchise ? user.franchise.name : null,
         franchiseId: user.franchiseId,
+        staffId: user.staffId,
         accessibleModules: user.accessibleModules
       }
     });

@@ -48,6 +48,23 @@ export async function POST(request: Request) {
       }
     });
 
+    // If it's a staff role, create a Staff record and link it
+    const staffRoles = ['Washer', 'Detailer', 'Cleaner', 'Supervisor'];
+    if (staffRoles.includes(roleName)) {
+      const staff = await prisma.staff.create({
+        data: {
+          name: username, // Use username as initial name
+          role: roleName,
+          franchiseId: franchiseId ? parseInt(franchiseId) : 1, // Fallback to 1
+        }
+      });
+
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { staffId: staff.id }
+      });
+    }
+
     return NextResponse.json({ id: user.id, username: user.username, accessibleModules: user.accessibleModules });
   } catch (error: any) {
     console.error('Error creating user:', error);

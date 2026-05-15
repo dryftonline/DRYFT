@@ -23,6 +23,8 @@ model User {
   stockLogs         StockUpdateLog[]
   franchise         Franchise?       @relation(fields: [franchiseId], references: [id])
   role              Role             @relation(fields: [roleId], references: [id])
+  staffId           Int?             @unique
+  staff             Staff?           @relation(fields: [staffId], references: [id])
 }
 
 
@@ -168,6 +170,7 @@ model Staff {
   franchise   Franchise         @relation(fields: [franchiseId], references: [id])
   attendances StaffAttendance[]
   jobsDone    Customer[]        @relation("StaffJobs")
+  user        User?
 }
 
 model StaffAttendance {
