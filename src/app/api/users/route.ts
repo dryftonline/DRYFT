@@ -51,11 +51,24 @@ export async function POST(request: Request) {
     // If it's a staff role, create a Staff record and link it
     const staffRoles = ['Washer', 'Detailer', 'Cleaner', 'Supervisor'];
     if (staffRoles.includes(roleName)) {
+      // Find a valid franchise ID if none provided
+      let finalFranchiseId = franchiseId ? parseInt(franchiseId) : null;
+      
+      if (!finalFranchiseId) {
+        const firstFranchise = await prisma.franchise.findFirst();
+        finalFranchiseId = firstFranchise?.id || null;
+      }
+
+      if (!finalFranchiseId) {
+        return NextResponse.json({ error: 'At least one franchise must exist to create staff' }, { status: 400 });
+      }
+
       const staff = await prisma.staff.create({
         data: {
-          name: username, // Use username as initial name
+          name: fullName || username, // Use full name if provided
+          phone: body.phone || null,
           role: roleName,
-          franchiseId: franchiseId ? parseInt(franchiseId) : 1, // Fallback to 1
+          franchiseId: finalFranchiseId,
         }
       });
 
