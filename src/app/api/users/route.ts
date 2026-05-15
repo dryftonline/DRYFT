@@ -22,7 +22,16 @@ import bcrypt from 'bcryptjs';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { username, email, password, roleName, franchiseId, accessibleModules } = body;
+    const { username, email, password, roleName, franchiseId, accessibleModules, fullName } = body;
+
+    // Check if user already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { username }
+    });
+
+    if (existingUser) {
+      return NextResponse.json({ error: 'Username already exists. Please choose a different one.' }, { status: 400 });
+    }
 
     if (!password) {
       return NextResponse.json({ error: 'Password is required' }, { status: 400 });
