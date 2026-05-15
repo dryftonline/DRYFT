@@ -1,3 +1,5 @@
+'use client';
+
 import { useEffect, useState, useRef } from 'react';
 import { Camera, MapPin, CheckCircle2, Loader2, LogIn, User, Lock, LogOut } from 'lucide-react';
 import { toast } from 'react-hot-toast';
