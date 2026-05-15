@@ -252,58 +252,42 @@ export default function UserManagement() {
               e.preventDefault();
               const formData = new FormData(e.currentTarget);
               
-              if (accountType === 'staff') {
-                const data = {
-                  name: formData.get('fullName'),
-                  phone: formData.get('phone'),
-                  role: formData.get('roleName'),
-                  franchiseId: formData.get('franchiseId'),
-                };
+              const password = formData.get('password') as string;
+              const confirmPassword = formData.get('confirmPassword') as string;
 
-                try {
-                  const res = await fetch('/api/staff', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data),
-                  });
-                  if (res.ok) {
-                    toast.success('Staff member added successfully!');
-                    setShowAddModal(false);
-                    // No need to fetchUsers as staff aren't in this list
-                  } else {
-                    const error = await res.json();
-                    toast.error(error.error || 'Failed to add staff');
-                  }
-                } catch (error) {
-                  toast.error('Failed to add staff');
-                }
+              if (password !== confirmPassword) {
+                toast.error('Passwords do not match');
                 return;
               }
 
               const modules = formData.getAll('modules') as string[];
               const data = {
                 username: formData.get('username'),
-                email: formData.get('email'),
-                password: formData.get('password'),
+                email: formData.get('email') || `${formData.get('username')}@dryft.com`,
+                password: password,
                 roleName: formData.get('roleName'),
                 franchiseId: formData.get('franchiseId'),
-                accessibleModules: modules.length > 0 ? modules : ['*'],
+                phone: formData.get('phone'),
+                fullName: formData.get('fullName'),
+                accessibleModules: modules.length > 0 ? modules : (accountType === 'staff' ? ['Staff Portal'] : ['*']),
               };
+
               try {
                 const res = await fetch('/api/users', {
                   method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify(data),
                 });
                 if (res.ok) {
-                  toast.success('User account created successfully!');
+                  toast.success(accountType === 'staff' ? 'Staff member created with login credentials!' : 'User account created successfully!');
                   setShowAddModal(false);
                   fetchUsers();
                 } else {
                   const error = await res.json();
-                  toast.error(error.error || 'Failed to create user');
+                  toast.error(error.error || 'Failed to create account');
                 }
               } catch (error) {
-                toast.error('Failed to create user');
+                toast.error('An error occurred');
               }
             }}>
               <div className="space-y-4">
@@ -333,79 +317,36 @@ export default function UserManagement() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-white/60">Full Name</label>
+                    <label className="text-sm font-medium text-white/60">
+                      {accountType === 'system' ? 'Full Name' : 'Staff Full Name'}
+                    </label>
                     <div className="relative">
                       <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" size={18} />
                       <input type="text" name="fullName" className="input-field pl-10" placeholder="John Doe" required />
                     </div>
                   </div>
-                  {accountType === 'system' ? (
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-white/60">Username</label>
-                      <input type="text" name="username" className="input-field" placeholder="johndoe" required />
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-white/60">Phone Number</label>
-                      <input type="text" name="phone" className="input-field" placeholder="+91..." required />
-                    </div>
-                  )}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-white/60">Login Username</label>
+                    <input type="text" name="username" className="input-field" placeholder="johndoe" required />
+                  </div>
                 </div>
 
-                {accountType === 'system' && (
-                  <>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-white/60">Email Address</label>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" size={18} />
-                        <input type="email" name="email" className="input-field pl-10" placeholder="john@dryft.com" required />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-white/60">Password</label>
-                        <div className="relative">
-                          <input 
-                            type={showPassword ? "text" : "password"} 
-                            name="password" 
-                            className="input-field pr-10" 
-                            placeholder="••••••••" 
-                            required 
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 bg-black text-white p-1 rounded-md hover:bg-black/80 transition-colors"
-                          >
-                            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                          </button>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-white/60">Confirm Password</label>
-                        <div className="relative">
-                          <input 
-                            type={showConfirmPassword ? "text" : "password"} 
-                            name="confirmPassword" 
-                            className="input-field pr-10" 
-                            placeholder="••••••••" 
-                            required 
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 bg-black text-white p-1 rounded-md hover:bg-black/80 transition-colors"
-                          >
-                            {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </>
-                )}
-
                 <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-white/60">
+                      {accountType === 'system' ? 'Email Address' : 'Staff Phone Number'}
+                    </label>
+                    <div className="relative">
+                      {accountType === 'system' ? (
+                        <>
+                          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" size={18} />
+                          <input type="email" name="email" className="input-field pl-10" placeholder="john@dryft.com" required />
+                        </>
+                      ) : (
+                        <input type="text" name="phone" className="input-field" placeholder="+91..." required />
+                      )}
+                    </div>
+                  </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-white/60">Role</label>
                     <select name="roleName" className="input-field bg-dryft-dark">
@@ -425,15 +366,57 @@ export default function UserManagement() {
                       )}
                     </select>
                   </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-white/60">Franchise</label>
-                    <select name="franchiseId" className="input-field bg-dryft-dark">
-                      <option value="">{accountType === 'system' ? 'All Access' : 'Select Franchise'}</option>
-                      {franchises.map(f => (
-                        <option key={f.id} value={f.id}>{f.name}</option>
-                      ))}
-                    </select>
+                    <label className="text-sm font-medium text-white/60">Login Password</label>
+                    <div className="relative">
+                      <input 
+                        type={showPassword ? "text" : "password"} 
+                        name="password" 
+                        className="input-field pr-10" 
+                        placeholder="••••••••" 
+                        required 
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 bg-black text-white p-1 rounded-md hover:bg-black/80 transition-colors"
+                      >
+                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
                   </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-white/60">Confirm Password</label>
+                    <div className="relative">
+                      <input 
+                        type={showConfirmPassword ? "text" : "password"} 
+                        name="confirmPassword" 
+                        className="input-field pr-10" 
+                        placeholder="••••••••" 
+                        required 
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 bg-black text-white p-1 rounded-md hover:bg-black/80 transition-colors"
+                      >
+                        {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-white/60">Franchise / Branch</label>
+                  <select name="franchiseId" className="input-field bg-dryft-dark" required>
+                    <option value="">Select Franchise</option>
+                    {franchises.map(f => (
+                      <option key={f.id} value={f.id}>{f.name}</option>
+                    ))}
+                  </select>
                 </div>
 
                 {accountType === 'system' && (
@@ -461,7 +444,7 @@ export default function UserManagement() {
                   Cancel
                 </button>
                 <button type="submit" className="flex-1 btn-primary py-3">
-                  {accountType === 'system' ? 'Create Account' : 'Add Staff Member'}
+                  {accountType === 'system' ? 'Create Account' : 'Create Staff Login'}
                 </button>
               </div>
             </form>

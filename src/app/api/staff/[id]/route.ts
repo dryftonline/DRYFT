@@ -7,9 +7,32 @@ export async function DELETE(
 ) {
   try {
     const id = parseInt(params.id);
-    await prisma.staff.delete({
-      where: { id }
+    
+    // Use a transaction to handle related records
+    await prisma.$transaction(async (tx) => {
+      // 1. Delete all attendance records
+      await tx.staffAttendance.deleteMany({
+        where: { staffId: id }
+      });
+
+      // 2. Unlink from customers (jobs)
+      await tx.customer.updateMany({
+        where: { staffId: id },
+        data: { staffId: null }
+      });
+
+      // 3. Unlink from User if exists
+      await tx.user.updateMany({
+        where: { staffId: id },
+        data: { staffId: null }
+      });
+
+      // 4. Finally delete the staff member
+      await tx.staff.delete({
+        where: { id }
+      });
     });
+
     return NextResponse.json({ message: 'Staff deleted successfully' });
   } catch (error: any) {
     console.error('Error deleting staff:', error);
