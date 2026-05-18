@@ -82,7 +82,8 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     userModules.includes('*') || 
     userModules.includes(item.label) || 
     item.label === 'Dashboard' ||
-    (item.label === 'Mark Attendance' && isStaffRole)
+    (item.label === 'Mark Attendance' && isStaffRole) ||
+    (item.label === 'Customers' && isStaffRole)
   );
 
   if (!mounted) return null;
