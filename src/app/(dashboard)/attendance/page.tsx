@@ -46,8 +46,8 @@ export default function MarkAttendance() {
   const capturePhoto = () => {
     if (videoRef.current) {
       const canvas = document.createElement('canvas');
-      canvas.width = 400; // compress image
-      canvas.height = 300;
+      canvas.width = 300; // compress image in portrait (3:4 aspect ratio)
+      canvas.height = 400;
       const ctx = canvas.getContext('2d');
       if (ctx) {
         ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
@@ -137,19 +137,29 @@ export default function MarkAttendance() {
         {step === 1 && (
           <div className="space-y-6">
             <div className="space-y-4">
-              <div className="bg-black/50 rounded-xl overflow-hidden border border-white/10 aspect-video relative flex items-center justify-center">
+              <div className="bg-black/50 rounded-xl overflow-hidden border border-white/10 aspect-[3/4] max-w-[280px] mx-auto relative flex items-center justify-center">
                 {photoData ? (
                   <img src={photoData} alt="Selfie" className="w-full h-full object-cover" />
                 ) : (
                   <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover" />
                 )}
                 
-                {!photoData && (
+                {!photoData ? (
                   <button 
                     onClick={capturePhoto}
-                    className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white text-black px-6 py-2 rounded-full font-bold flex items-center gap-2 hover:scale-105 transition-transform shadow-lg"
+                    className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white text-black px-6 py-2 rounded-full font-bold flex items-center gap-2 hover:scale-105 transition-transform shadow-lg whitespace-nowrap"
                   >
                     <Camera size={18} /> Take Selfie
+                  </button>
+                ) : (
+                  <button 
+                    onClick={() => {
+                      setPhotoData(null);
+                      startCamera();
+                    }}
+                    className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/80 hover:bg-black text-white px-6 py-2 rounded-full font-bold flex items-center gap-2 hover:scale-105 transition-transform shadow-lg border border-white/10 whitespace-nowrap"
+                  >
+                    <Camera size={18} /> Retake Selfie
                   </button>
                 )}
               </div>
