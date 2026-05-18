@@ -14,7 +14,8 @@ import {
   Settings,
   LogOut,
   Menu,
-  X
+  X,
+  CheckCircle2
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { clsx, type ClassValue } from 'clsx';
@@ -52,17 +53,10 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   }, []);
 
   useEffect(() => {
-    if (mounted) {
-      if (!isAuthenticated) {
-        router.push('/login');
-      } else {
-        const isStaff = ['Washer', 'Detailer', 'Cleaner', 'Supervisor'].includes(user?.role || '');
-        if (isStaff) {
-          router.push('/staff-portal');
-        }
-      }
+    if (mounted && !isAuthenticated) {
+      router.push('/login');
     }
-  }, [mounted, isAuthenticated, user, router]);
+  }, [mounted, isAuthenticated, router]);
 
   const handleLogout = () => {
     logout();
@@ -71,6 +65,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
   const allNavItems = [
     { label: 'Dashboard', icon: LayoutDashboard, path: '/' },
+    { label: 'Mark Attendance', icon: CheckCircle2, path: '/attendance' },
     { label: 'Customers', icon: Users, path: '/customers' },
     { label: 'Franchises', icon: Store, path: '/franchises' },
     { label: 'Stock Updates', icon: Box, path: '/stock' },
@@ -82,10 +77,12 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   ];
 
   const userModules = user?.accessibleModules || ['*'];
+  const isStaffRole = ['Washer', 'Detailer', 'Cleaner', 'Supervisor'].includes(user?.role || '');
   const navItems = allNavItems.filter(item => 
     userModules.includes('*') || 
     userModules.includes(item.label) || 
-    item.label === 'Dashboard'
+    item.label === 'Dashboard' ||
+    (item.label === 'Mark Attendance' && isStaffRole)
   );
 
   if (!mounted) return null;

@@ -25,14 +25,8 @@ export default function LoginPage() {
       const { user, token } = res.data;
       
       login(user, token);
-      const isStaff = ['Washer', 'Detailer', 'Cleaner', 'Supervisor'].includes(user.role);
-      if (isStaff) {
-        toast.success(`Welcome back, ${user.username}!`);
-        router.push('/staff-portal');
-      } else {
-        toast.success('Welcome back, DRYFT Admin!');
-        router.push('/');
-      }
+      toast.success(`Welcome back, ${user.username || 'DRYFT Admin'}!`);
+      router.push('/');
     } catch (error: any) {
       toast.error(error.response?.data?.error || 'Login failed');
       setLoading(false);
