@@ -21,6 +21,12 @@ import {
   Megaphone
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
 
 export default function NotificationsPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -273,6 +279,4 @@ export default function NotificationsPage() {
   );
 }
 
-function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(' ');
-}
+// cn helper is now defined and hoisted at the top of the file using clsx and twMerge
