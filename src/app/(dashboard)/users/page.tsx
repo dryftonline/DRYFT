@@ -472,6 +472,9 @@ export default function UserManagement() {
               const roleName = formData.get('roleName') as string;
               const franchiseId = formData.get('franchiseId') as string;
               
+              const fullName = formData.get('fullName') as string;
+              const phone = formData.get('phone') as string;
+              
               const modules = formData.getAll('modules') as string[];
               const isStaffRole = ['Washer', 'Detailer', 'Cleaner', 'Supervisor'].includes(roleName || editingUser.role?.name);
               
@@ -484,6 +487,11 @@ export default function UserManagement() {
 
               if (password) {
                 data.password = password;
+              }
+
+              if (editingUser.staffId) {
+                data.fullName = fullName;
+                data.phone = phone;
               }
 
               try {
@@ -505,13 +513,36 @@ export default function UserManagement() {
               }
             }}>
               <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-white/60">Login Username</label>
-                  <div className="relative">
-                    <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" size={18} />
-                    <input type="text" name="username" className="input-field pl-10" defaultValue={editingUser.username} required />
+                {editingUser.staffId ? (
+                  <>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-white/60">Staff Full Name</label>
+                        <div className="relative">
+                          <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" size={18} />
+                          <input type="text" name="fullName" className="input-field pl-10" defaultValue={editingUser.staff?.name || ''} required />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-white/60">Login Username</label>
+                        <input type="text" name="username" className="input-field" defaultValue={editingUser.username} required />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-white/60">Staff Phone Number</label>
+                      <input type="text" name="phone" className="input-field" defaultValue={editingUser.staff?.phone || ''} placeholder="+91..." required />
+                    </div>
+                  </>
+                ) : (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-white/60">Login Username</label>
+                    <div className="relative">
+                      <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" size={18} />
+                      <input type="text" name="username" className="input-field pl-10" defaultValue={editingUser.username} required />
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">

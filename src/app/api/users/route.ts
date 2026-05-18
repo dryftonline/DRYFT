@@ -6,7 +6,8 @@ export async function GET() {
     const users = await prisma.user.findMany({
       include: {
         role: true,
-        franchise: true
+        franchise: true,
+        staff: true
       },
       orderBy: { created_at: 'desc' }
     });
