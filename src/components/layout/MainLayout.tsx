@@ -146,6 +146,18 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                 </SidebarLink>
               ))}
             </nav>
+            <div className="pt-6 border-t border-white/10 mt-auto">
+              <button 
+                onClick={() => {
+                  setIsSidebarOpen(false);
+                  handleLogout();
+                }}
+                className="flex items-center gap-3 px-4 py-3 w-full text-white/60 hover:text-red-400 hover:bg-red-400/5 rounded-xl transition-all duration-200"
+              >
+                <LogOut size={20} />
+                <span>Sign Out</span>
+              </button>
+            </div>
           </aside>
         </div>
       )}
