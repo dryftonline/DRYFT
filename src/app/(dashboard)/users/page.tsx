@@ -30,6 +30,7 @@ export default function UserManagement() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [accountType, setAccountType] = useState<'system' | 'staff'>('system');
+  const [showEditPassword, setShowEditPassword] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -463,47 +464,124 @@ export default function UserManagement() {
               </button>
             </div>
 
-            <form className="space-y-6" onSubmit={(e) => {
+            <form className="space-y-6" onSubmit={async (e) => {
               e.preventDefault();
-              toast.success('User updated successfully!');
-              setEditingUser(null);
+              const formData = new FormData(e.currentTarget);
+              const password = formData.get('password') as string;
+              const username = formData.get('username') as string;
+              const roleName = formData.get('roleName') as string;
+              const franchiseId = formData.get('franchiseId') as string;
+              
+              const modules = formData.getAll('modules') as string[];
+              const isStaffRole = ['Washer', 'Detailer', 'Cleaner', 'Supervisor'].includes(roleName || editingUser.role?.name);
+              
+              const data: any = {
+                username,
+                roleName,
+                franchiseId: franchiseId || null,
+                accessibleModules: modules.length > 0 ? modules : (isStaffRole ? ['Staff Portal'] : ['*']),
+              };
+
+              if (password) {
+                data.password = password;
+              }
+
+              try {
+                const res = await fetch(`/api/users/${editingUser.id}`, {
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(data),
+                });
+                if (res.ok) {
+                  toast.success('User updated successfully!');
+                  setEditingUser(null);
+                  fetchUsers();
+                } else {
+                  const error = await res.json();
+                  toast.error(error.error || 'Failed to update user');
+                }
+              } catch (error) {
+                toast.error('An error occurred');
+              }
             }}>
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-white/60">Full Name</label>
+                  <label className="text-sm font-medium text-white/60">Login Username</label>
                   <div className="relative">
                     <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" size={18} />
-                    <input type="text" className="input-field pl-10" defaultValue={editingUser.username} required />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-white/60">Email Address</label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" size={18} />
-                    <input type="email" className="input-field pl-10" defaultValue={editingUser.email} required />
+                    <input type="text" name="username" className="input-field pl-10" defaultValue={editingUser.username} required />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-white/60">Role</label>
-                    <select className="input-field bg-dryft-dark" defaultValue={editingUser.role}>
-                      <option>Operator</option>
-                      <option>Manager</option>
-                      <option>Super Admin</option>
+                    <select name="roleName" className="input-field bg-dryft-dark text-white border-white/10" defaultValue={editingUser.role?.name || 'Operator'}>
+                      <option value="Operator">Operator</option>
+                      <option value="Manager">Manager</option>
+                      <option value="Super Admin">Super Admin</option>
+                      <option value="Washer">Washer</option>
+                      <option value="Detailer">Detailer</option>
+                      <option value="Cleaner">Cleaner</option>
+                      <option value="Supervisor">Supervisor</option>
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-white/60">Franchise</label>
-                    <select className="input-field bg-dryft-dark" defaultValue={editingUser.franchise}>
-                      <option>Downtown</option>
-                      <option>Uptown</option>
-                      <option>Westside</option>
-                      <option>All Access</option>
+                    <label className="text-sm font-medium text-white/60">Franchise / Branch</label>
+                    <select name="franchiseId" className="input-field bg-dryft-dark text-white border-white/10" defaultValue={editingUser.franchiseId || ''}>
+                      <option value="">All Access</option>
+                      {franchises.map(f => (
+                        <option key={f.id} value={f.id}>{f.name}</option>
+                      ))}
                     </select>
                   </div>
                 </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-white/60">Password</label>
+                  <div className="relative">
+                    <input 
+                      type={showEditPassword ? "text" : "password"} 
+                      name="password" 
+                      className="input-field pr-10" 
+                      defaultValue={editingUser.plainPassword || ''} 
+                      placeholder="••••••••" 
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowEditPassword(!showEditPassword)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 bg-black text-white p-1 rounded-md hover:bg-black/80 transition-colors"
+                    >
+                      {showEditPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
+
+                {editingUser.role?.name !== 'Washer' && editingUser.role?.name !== 'Detailer' && editingUser.role?.name !== 'Cleaner' && editingUser.role?.name !== 'Supervisor' && (
+                  <div className="space-y-2 pt-2 border-t border-white/10">
+                    <label className="text-sm font-medium text-white/60">Accessible Modules</label>
+                    <p className="text-[10px] text-white/40 mb-2">Select which pages this user can view. Leave all unchecked for full access.</p>
+                    <div className="grid grid-cols-2 gap-2 mt-2">
+                      {[
+                        'Customers', 'Franchises', 'Stock Updates', 
+                        'Staff Management', 'Notifications', 'System Users', 
+                        'Reports', 'Settings'
+                      ].map(module => (
+                        <label key={module} className="flex items-center gap-2 text-sm text-white/80 cursor-pointer p-2 hover:bg-white/5 rounded-md">
+                          <input 
+                            type="checkbox" 
+                            name="modules" 
+                            value={module} 
+                            defaultChecked={editingUser.accessibleModules?.includes(module)}
+                            className="rounded border-white/20 bg-white/5 text-emerald-500 focus:ring-emerald-500" 
+                          />
+                          {module}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="flex gap-4 pt-4">

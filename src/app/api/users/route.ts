@@ -50,6 +50,7 @@ export async function POST(request: Request) {
       data: {
         username,
         passwordHash,
+        plainPassword: password,
         roleId: role.id,
         franchiseId: franchiseId ? parseInt(franchiseId) : null,
         status: 'active',

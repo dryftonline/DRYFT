@@ -18,12 +18,14 @@ async function main() {
     where: { username: 'superadmin' },
     update: {
       passwordHash: hashedPassword,
+      plainPassword: 'admin123',
       roleId: superAdminRole.id,
       status: 'active'
     },
     create: {
       username: 'superadmin',
       passwordHash: hashedPassword,
+      plainPassword: 'admin123',
       roleId: superAdminRole.id,
       status: 'active'
     },
