@@ -8,6 +8,7 @@ interface User {
   franchise: string | null;
   franchiseId: number | null;
   staffId: number | null;
+  plainPassword?: string;
   accessibleModules?: string[];
 }
 

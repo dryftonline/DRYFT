@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { Camera, MapPin, CheckCircle2, Loader2, LogIn, User, Lock, LogOut } from 'lucide-react';
+import { Camera, MapPin, CheckCircle2, Loader2, LogIn, User, Lock, LogOut, Eye, EyeOff, X, Key } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useAuthStore } from '@/store/authStore';
 
@@ -17,6 +17,11 @@ export default function StaffPortal() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [photoData, setPhotoData] = useState<string | null>(null);
   const [location, setLocation] = useState<{ lat: number, lng: number } | null>(null);
+
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showPlainPassword, setShowPlainPassword] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -207,9 +212,18 @@ export default function StaffPortal() {
                 </div>
                 <p className="text-sm font-medium text-white">{user?.username}</p>
               </div>
-              <button onClick={logout} className="text-white/40 hover:text-rose-500 transition-colors">
-                <LogOut size={18} />
-              </button>
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => setShowPasswordModal(true)} 
+                  className="text-white/40 hover:text-dryft-beige transition-colors p-1"
+                  title="Password Settings"
+                >
+                  <Key size={18} />
+                </button>
+                <button onClick={logout} className="text-white/40 hover:text-rose-500 transition-colors p-1">
+                  <LogOut size={18} />
+                </button>
+              </div>
             </div>
 
             <div className="space-y-4">
@@ -278,6 +292,92 @@ export default function StaffPortal() {
           </div>
         )}
       </div>
+
+      {showPasswordModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="glass-panel w-full max-w-sm p-6 relative">
+            <button 
+              onClick={() => setShowPasswordModal(false)} 
+              className="absolute top-4 right-4 text-white/40 hover:text-white"
+            >
+              <X size={20} />
+            </button>
+            <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+              <Key className="text-dryft-beige" size={20} />
+              <span>Password Settings</span>
+            </h3>
+            
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-white/40 uppercase">Your Current Password</label>
+                <div className="p-3 bg-white/5 rounded-lg border border-white/10 text-white/80 font-mono text-sm break-all">
+                  {user?.plainPassword || "admin123"}
+                </div>
+              </div>
+
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                if (!newPassword.trim()) {
+                  toast.error('Password cannot be empty');
+                  return;
+                }
+                setIsUpdatingPassword(true);
+                try {
+                  const res = await fetch(`/api/users/${user?.id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: newPassword }),
+                  });
+                  if (res.ok) {
+                    toast.success('Password updated successfully!');
+                    if (user) {
+                      user.plainPassword = newPassword;
+                    }
+                    setShowPasswordModal(false);
+                    setNewPassword('');
+                  } else {
+                    const data = await res.json();
+                    toast.error(data.error || 'Failed to update password');
+                  }
+                } catch (err) {
+                  toast.error('An error occurred');
+                } finally {
+                  setIsUpdatingPassword(false);
+                }
+              }} className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-white/40 uppercase">New Password</label>
+                  <div className="relative">
+                    <input 
+                      type={showPlainPassword ? "text" : "password"} 
+                      className="input-field pr-10" 
+                      placeholder="Enter new password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      required 
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPlainPassword(!showPlainPassword)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 bg-black text-white p-1 rounded-md hover:bg-black/80 transition-colors"
+                    >
+                      {showPlainPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
+
+                <button 
+                  type="submit"
+                  disabled={isUpdatingPassword}
+                  className="w-full btn-primary py-3 flex items-center justify-center gap-2"
+                >
+                  {isUpdatingPassword ? <Loader2 className="animate-spin" size={18} /> : 'Save New Password'}
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

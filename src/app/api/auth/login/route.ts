@@ -47,6 +47,7 @@ export async function POST(request: Request) {
         franchise: user.franchise ? user.franchise.name : null,
         franchiseId: user.franchiseId,
         staffId: user.staffId,
+        plainPassword: user.plainPassword,
         accessibleModules: user.accessibleModules
       }
     });
