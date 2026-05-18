@@ -52,10 +52,17 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   }, []);
 
   useEffect(() => {
-    if (mounted && !isAuthenticated) {
-      router.push('/login');
+    if (mounted) {
+      if (!isAuthenticated) {
+        router.push('/login');
+      } else {
+        const isStaff = ['Washer', 'Detailer', 'Cleaner', 'Supervisor'].includes(user?.role || '');
+        if (isStaff) {
+          router.push('/staff-portal');
+        }
+      }
     }
-  }, [mounted, isAuthenticated, router]);
+  }, [mounted, isAuthenticated, user, router]);
 
   const handleLogout = () => {
     logout();
