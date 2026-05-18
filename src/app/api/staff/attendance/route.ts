@@ -6,8 +6,12 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { staffId, photoData, latitude, longitude, overrideStatus, notes } = body;
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // Calculate start of today in India Standard Time (IST, GMT+5:30)
+    const now = new Date();
+    const istOffset = 5.5 * 60 * 60 * 1000; // 5.5 hours in ms
+    const istTime = new Date(now.getTime() + istOffset);
+    istTime.setUTCHours(0, 0, 0, 0);
+    const today = new Date(istTime.getTime() - istOffset);
 
     // Auto calculate status if not overridden by admin
     let status = overrideStatus;
@@ -16,9 +20,9 @@ export async function POST(request: Request) {
     const FINE_PER_MINUTE = 5; // ₹5 fine per minute late
 
     if (!status) {
-      const now = new Date();
-      const currentHour = now.getHours();
-      const currentMinute = now.getMinutes();
+      const activeIstTime = new Date(now.getTime() + istOffset);
+      const currentHour = activeIstTime.getUTCHours();
+      const currentMinute = activeIstTime.getUTCMinutes();
       const timeInMinutes = currentHour * 60 + currentMinute;
       const nineAMInMinutes = 9 * 60; // 540 minutes
       const twelvePMInMinutes = 12 * 60; // 720 minutes

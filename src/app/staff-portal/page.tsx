@@ -244,14 +244,24 @@ export default function StaffPortal() {
                 )}
               </div>
               
-              <div className="flex items-center gap-3 p-4 bg-white/5 rounded-xl border border-white/10">
-                <MapPin className={location ? "text-emerald-500" : "text-amber-500"} size={24} />
-                <div>
-                  <p className="text-sm font-medium text-white">Location Status</p>
-                  <p className="text-xs text-white/40">
-                    {location ? "GPS coordinates captured" : "Waiting for location..."}
-                  </p>
+              <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/10">
+                <div className="flex items-center gap-3">
+                  <MapPin className={location ? "text-emerald-500" : "text-amber-500"} size={24} />
+                  <div>
+                    <p className="text-sm font-medium text-white">Location Status</p>
+                    <p className="text-xs text-white/40">
+                      {location ? `GPS coordinates captured` : "Waiting for location..."}
+                    </p>
+                  </div>
                 </div>
+                {!location && (
+                  <button 
+                    onClick={getLocation}
+                    className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg text-xs font-bold transition-colors"
+                  >
+                    Retry GPS
+                  </button>
+                )}
               </div>
             </div>
 
