@@ -3,16 +3,10 @@
 import { useEffect, useState } from 'react';
 import { 
   Search, 
-  Plus, 
   UserCircle2,
-  CheckCircle2,
-  XCircle,
-  Clock,
   X,
   Edit2,
-  Trash2,
-  MapPin,
-  ExternalLink
+  Trash2
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
@@ -66,30 +60,12 @@ export default function StaffManagement() {
     }
   };
 
-  const markAttendance = async (staffId: number, status: string) => {
-    try {
-      const res = await fetch('/api/staff/attendance', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ staffId, overrideStatus: status })
-      });
-      if (res.ok) {
-        toast.success(`Attendance marked as ${status}`);
-        fetchStaff();
-      } else {
-        toast.error('Failed to mark attendance');
-      }
-    } catch (error) {
-      toast.error('An error occurred');
-    }
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white">Staff Management</h1>
-          <p className="text-white/40 text-sm">Manage staff attendance and track their work performance.</p>
+          <p className="text-white/40 text-sm">Manage staff members and track their work performance.</p>
         </div>
       </div>
 
@@ -117,7 +93,6 @@ export default function StaffManagement() {
                 <th className="px-6 py-4 font-semibold">Role / Branch</th>
                  <th className="px-6 py-4 font-semibold">Jobs Done</th>
                 <th className="px-6 py-4 font-semibold">Total Revenue (₹)</th>
-                <th className="px-6 py-4 font-semibold">Today's Attendance</th>
                 <th className="px-6 py-4 font-semibold text-right">Actions</th>
               </tr>
             </thead>
@@ -126,8 +101,6 @@ export default function StaffManagement() {
                 s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                 s.role.toLowerCase().includes(searchTerm.toLowerCase())
               ).map((member) => {
-                const todayAttendance = member.attendances?.[0]?.status;
-
                 return (
                   <tr key={member.id} className="hover:bg-white/[0.02] transition-colors group">
                     <td className="px-6 py-4">
@@ -155,59 +128,7 @@ export default function StaffManagement() {
                         ₹{member.totalWorth || 0}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-col gap-2">
-                        {todayAttendance === 'present' ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-500/10 text-emerald-500 text-[10px] font-bold uppercase w-fit">
-                            <CheckCircle2 size={12} /> Present
-                          </span>
-                        ) : todayAttendance === 'absent' ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-rose-500/10 text-rose-500 text-[10px] font-bold uppercase w-fit">
-                            <XCircle size={12} /> Absent
-                          </span>
-                        ) : todayAttendance === 'late' ? (
-                          <div className="flex flex-col gap-1">
-                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-orange-500/10 text-orange-500 text-[10px] font-bold uppercase w-fit">
-                              <Clock size={12} /> Late
-                            </span>
-                            {member.attendances?.[0]?.minutesLate > 0 && (
-                              <span className="text-[10px] text-orange-400">
-                                {member.attendances[0].minutesLate} mins late (Fine: ₹{member.attendances[0].fineAmount})
-                              </span>
-                            )}
-                          </div>
-                        ) : todayAttendance === 'half-day' ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-amber-500/10 text-amber-500 text-[10px] font-bold uppercase w-fit">
-                            <Clock size={12} /> Half Day
-                          </span>
-                        ) : (
-                          <div className="flex gap-1">
-                            <button onClick={() => markAttendance(member.id, 'present')} className="px-2 py-1 text-[10px] font-bold rounded bg-white/5 hover:bg-emerald-500/20 text-white/60 hover:text-emerald-500 transition-colors">P</button>
-                            <button onClick={() => markAttendance(member.id, 'absent')} className="px-2 py-1 text-[10px] font-bold rounded bg-white/5 hover:bg-rose-500/20 text-white/60 hover:text-rose-500 transition-colors">A</button>
-                            <button onClick={() => markAttendance(member.id, 'late')} className="px-2 py-1 text-[10px] font-bold rounded bg-white/5 hover:bg-orange-500/20 text-white/60 hover:text-orange-500 transition-colors">L</button>
-                            <button onClick={() => markAttendance(member.id, 'half-day')} className="px-2 py-1 text-[10px] font-bold rounded bg-white/5 hover:bg-amber-500/20 text-white/60 hover:text-amber-500 transition-colors">H</button>
-                          </div>
-                        )}
-                        
-                        <div className="flex flex-wrap gap-2">
-                          {member.attendances?.[0]?.photoData && (
-                            <a href={member.attendances[0].photoData} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-white/5 text-blue-400 text-[10px] hover:bg-white/10 transition-colors">
-                              <ExternalLink size={10} /> View Photo
-                            </a>
-                          )}
-                          {member.attendances?.[0]?.latitude && (
-                            <a 
-                              href={`https://maps.google.com/?q=${member.attendances[0].latitude},${member.attendances[0].longitude}`} 
-                              target="_blank" 
-                              rel="noreferrer" 
-                              className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-emerald-500/10 text-emerald-500 text-[10px] font-bold hover:bg-emerald-500/20 transition-colors border border-emerald-500/20"
-                            >
-                              <MapPin size={10} /> Verified Location
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                    </td>
+
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button 

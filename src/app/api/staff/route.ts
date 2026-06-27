@@ -3,23 +3,10 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET(request: Request) {
   try {
-    // Calculate start of today in India Standard Time (IST, GMT+5:30)
-    const now = new Date();
-    const istOffset = 5.5 * 60 * 60 * 1000; // 5.5 hours in ms
-    const istTime = new Date(now.getTime() + istOffset);
-    istTime.setUTCHours(0, 0, 0, 0);
-    const today = new Date(istTime.getTime() - istOffset);
 
     const staff = await prisma.staff.findMany({
       include: {
         franchise: true,
-        attendances: {
-          where: {
-            date: {
-              gte: today
-            }
-          }
-        },
         jobsDone: true
       },
       orderBy: { created_at: 'desc' }

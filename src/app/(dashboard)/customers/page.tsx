@@ -114,8 +114,8 @@ export default function Customers() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white">Customer Management</h1>
-          <p className="text-white/40 text-sm">View and manage car wash customer data across all branches.</p>
+          <h1 className="text-2xl font-bold text-white">Billing & Invoices</h1>
+          <p className="text-white/40 text-sm">Manage invoices, services, add-ons, and customer billing records across all branches.</p>
         </div>
         <button 
           onClick={() => {

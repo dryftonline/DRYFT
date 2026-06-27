@@ -15,7 +15,7 @@ import {
   LogOut,
   Menu,
   X,
-  CheckCircle2
+  Receipt
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { clsx, type ClassValue } from 'clsx';
@@ -65,8 +65,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
   const allNavItems = [
     { label: 'Dashboard', icon: LayoutDashboard, path: '/' },
-    { label: 'Mark Attendance', icon: CheckCircle2, path: '/attendance' },
-    { label: 'Customers', icon: Users, path: '/customers' },
+    { label: 'Billing & POS', icon: Receipt, path: '/customers' },
     { label: 'Franchises', icon: Store, path: '/franchises' },
     { label: 'Stock Updates', icon: Box, path: '/stock' },
     { label: 'Staff Management', icon: Users, path: '/staff' },
@@ -81,9 +80,9 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const navItems = allNavItems.filter(item => 
     userModules.includes('*') || 
     userModules.includes(item.label) || 
+    (item.label === 'Billing & POS' && (userModules.includes('Customers') || userModules.includes('Billing & POS'))) ||
     item.label === 'Dashboard' ||
-    (item.label === 'Mark Attendance' && isStaffRole) ||
-    (item.label === 'Customers' && isStaffRole)
+    (item.label === 'Billing & POS' && isStaffRole)
   );
 
   if (!mounted) return null;
