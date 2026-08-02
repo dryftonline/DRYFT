@@ -16,7 +16,9 @@ import {
   XCircle,
   X,
   Eye,
-  EyeOff
+  EyeOff,
+  Clock,
+  Key
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
@@ -31,6 +33,9 @@ export default function UserManagement() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [accountType, setAccountType] = useState<'system' | 'staff'>('system');
   const [showEditPassword, setShowEditPassword] = useState(false);
+  
+  // Track password visibility per user ID
+  const [visiblePasswords, setVisiblePasswords] = useState<{ [key: number]: boolean }>({});
 
   useEffect(() => {
     fetchUsers();
@@ -80,6 +85,7 @@ export default function UserManagement() {
     try {
       const res = await fetch(`/api/users/${id}`, {
         method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus }),
       });
       if (res.ok) {
@@ -91,12 +97,44 @@ export default function UserManagement() {
     }
   };
 
+  const handleApproval = async (id: number, newStatus: 'active' | 'rejected') => {
+    try {
+      const res = await fetch(`/api/users/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (res.ok) {
+        setUsers(users.map(u => u.id === id ? { ...u, status: newStatus } : u));
+        if (newStatus === 'active') {
+          toast.success('User registration approved! They can now log in.');
+        } else {
+          toast.error('User registration request rejected.');
+        }
+      } else {
+        toast.error('Failed to update user request');
+      }
+    } catch (error) {
+      toast.error('An error occurred');
+    }
+  };
+
+  const togglePasswordVisibility = (id: number) => {
+    setVisiblePasswords(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  };
+
+  const pendingUsers = users.filter(u => u.status === 'pending');
+  const activeAndOtherUsers = users.filter(u => u.status !== 'pending');
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white">User Management</h1>
-          <p className="text-white/40 text-sm">Manage system administrators, managers, and franchise operators.</p>
+          <p className="text-white/40 text-sm">Manage system administrators, staff registrations, and approval requests.</p>
         </div>
         <button 
           onClick={() => setShowAddModal(true)}
@@ -114,7 +152,7 @@ export default function UserManagement() {
             <UserIcon size={20} />
           </div>
           <div>
-            <p className="text-xs text-white/40 uppercase font-bold tracking-wider">Total Users</p>
+            <p className="text-xs text-white/40 uppercase font-bold tracking-wider">Total Accounts</p>
             <p className="text-xl font-bold text-white">{users.length}</p>
           </div>
         </div>
@@ -123,20 +161,93 @@ export default function UserManagement() {
             <Shield size={20} />
           </div>
           <div>
-            <p className="text-xs text-white/40 uppercase font-bold tracking-wider">Active Admins</p>
+            <p className="text-xs text-white/40 uppercase font-bold tracking-wider">Active Users</p>
             <p className="text-xl font-bold text-white">{users.filter(u => u.status === 'active').length}</p>
           </div>
         </div>
         <div className="glass-panel p-4 flex items-center gap-4">
           <div className="p-3 rounded-xl bg-amber-500/10 text-amber-500">
-            <Shield size={20} />
+            <Clock size={20} />
           </div>
           <div>
-            <p className="text-xs text-white/40 uppercase font-bold tracking-wider">Pending Invites</p>
-            <p className="text-xl font-bold text-white">2</p>
+            <p className="text-xs text-white/40 uppercase font-bold tracking-wider">Pending Signup Requests</p>
+            <p className="text-xl font-bold text-amber-400">{pendingUsers.length}</p>
           </div>
         </div>
       </div>
+
+      {/* Pending Signup Requests Section */}
+      {pendingUsers.length > 0 && (
+        <div className="glass-panel p-6 border-amber-500/30 bg-amber-500/[0.02]">
+          <div className="flex items-center gap-2 mb-4">
+            <Clock className="text-amber-400" size={20} />
+            <h2 className="text-lg font-bold text-white">Pending Employee Registration Requests</h2>
+            <span className="bg-amber-500/20 text-amber-300 text-xs px-2 py-0.5 rounded-full font-bold">
+              {pendingUsers.length} Pending
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {pendingUsers.map((pUser) => (
+              <div key={pUser.id} className="p-4 rounded-xl bg-white/5 border border-white/10 flex flex-col justify-between gap-4">
+                <div className="flex justify-between items-start">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-amber-500/20 text-amber-300 font-bold flex items-center justify-center border border-amber-500/30">
+                      {pUser.username[0].toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-white">{pUser.username}</p>
+                      <p className="text-xs text-white/50">{pUser.staff?.name || pUser.email || 'Employee Request'}</p>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-bold uppercase px-2 py-1 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                    {pUser.role?.name || 'Operator'}
+                  </span>
+                </div>
+
+                <div className="space-y-1.5 text-xs text-white/60 bg-black/30 p-2.5 rounded-lg border border-white/5">
+                  <div className="flex justify-between items-center">
+                    <span>Branch:</span>
+                    <span className="font-semibold text-white">{pUser.franchise?.name || 'All Branches'}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="flex items-center gap-1"><Key size={12} /> Password:</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-emerald-400 font-bold">
+                        {visiblePasswords[pUser.id] ? (pUser.plainPassword || 'N/A') : '••••••••'}
+                      </span>
+                      <button 
+                        onClick={() => togglePasswordVisibility(pUser.id)}
+                        className="text-white/40 hover:text-white transition-colors"
+                        title={visiblePasswords[pUser.id] ? "Hide Password" : "View Password"}
+                      >
+                        {visiblePasswords[pUser.id] ? <EyeOff size={14} /> : <Eye size={14} />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleApproval(pUser.id, 'active')}
+                    className="flex-1 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1 shadow-lg"
+                  >
+                    <CheckCircle2 size={14} />
+                    <span>Accept Request</span>
+                  </button>
+                  <button
+                    onClick={() => handleApproval(pUser.id, 'rejected')}
+                    className="flex-1 py-2 bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1 border border-rose-500/30"
+                  >
+                    <XCircle size={14} />
+                    <span>Reject</span>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Filters & Search */}
       <div className="flex flex-col md:flex-row gap-4">
@@ -167,15 +278,16 @@ export default function UserManagement() {
                 <th className="px-6 py-4 font-semibold">User</th>
                 <th className="px-6 py-4 font-semibold">Role</th>
                 <th className="px-6 py-4 font-semibold">Franchise</th>
+                <th className="px-6 py-4 font-semibold">Credentials (Password)</th>
                 <th className="px-6 py-4 font-semibold">Status</th>
-                <th className="px-6 py-4 font-semibold">Last Login</th>
+                <th className="px-6 py-4 font-semibold">Created Date</th>
                 <th className="px-6 py-4 font-semibold text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {users.filter(u => 
+              {activeAndOtherUsers.filter(u => 
                 u.username.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                u.email.toLowerCase().includes(searchTerm.toLowerCase())
+                (u.email && u.email.toLowerCase().includes(searchTerm.toLowerCase()))
               ).map((user) => (
                 <tr key={user.id} className="hover:bg-white/[0.02] transition-colors group">
                   <td className="px-6 py-4">
@@ -185,7 +297,7 @@ export default function UserManagement() {
                       </div>
                       <div>
                         <p className="text-sm font-medium text-white">{user.username}</p>
-                        <p className="text-xs text-white/40">{user.email}</p>
+                        <p className="text-xs text-white/40">{user.staff?.name || user.email || 'System User'}</p>
                       </div>
                     </div>
                   </td>
@@ -200,6 +312,23 @@ export default function UserManagement() {
                     </span>
                   </td>
                   <td className="px-6 py-4 text-sm text-white/60">{user.franchise?.name || 'All Access'}</td>
+                  
+                  {/* Password Reveal Column */}
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className="font-mono text-emerald-400 font-bold">
+                        {visiblePasswords[user.id] ? (user.plainPassword || 'N/A') : '••••••••'}
+                      </span>
+                      <button 
+                        onClick={() => togglePasswordVisibility(user.id)}
+                        className="text-white/40 hover:text-white transition-colors"
+                        title={visiblePasswords[user.id] ? "Hide Password" : "View Password"}
+                      >
+                        {visiblePasswords[user.id] ? <EyeOff size={14} /> : <Eye size={14} />}
+                      </button>
+                    </div>
+                  </td>
+
                   <td className="px-6 py-4">
                     <button 
                       onClick={() => toggleStatus(user.id, user.status)}
@@ -207,6 +336,8 @@ export default function UserManagement() {
                         "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase transition-colors",
                         user.status === 'active' 
                           ? "bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20" 
+                          : user.status === 'rejected'
+                          ? "bg-rose-500/20 text-rose-400 border border-rose-500/30"
                           : "bg-rose-500/10 text-rose-500 hover:bg-rose-500/20"
                       )}
                     >
@@ -249,7 +380,7 @@ export default function UserManagement() {
               </button>
             </div>
 
-              <form className="space-y-6" onSubmit={async (e) => {
+            <form className="space-y-6" onSubmit={async (e) => {
               e.preventDefault();
               const formData = new FormData(e.currentTarget);
               

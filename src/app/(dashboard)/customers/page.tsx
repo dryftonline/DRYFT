@@ -13,9 +13,37 @@ import {
   Clock,
   X
 } from 'lucide-react';
-import { toast } from 'react-hot-toast';
+import { useAuthStore } from '@/store/authStore';
+
+function generateKotNumber(customerList: any[]) {
+  const now = new Date();
+  const yy = String(now.getFullYear()).slice(-2);
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
+  const datePrefix = `${yy}${mm}${dd}`;
+
+  const todayCustomers = customerList.filter((c) => {
+    if (c.kot && typeof c.kot === 'string' && c.kot.startsWith(datePrefix)) {
+      return true;
+    }
+    if (c.created_at || c.createdAt) {
+      const cDate = new Date(c.created_at || c.createdAt);
+      return (
+        cDate.getFullYear() === now.getFullYear() &&
+        cDate.getMonth() === now.getMonth() &&
+        cDate.getDate() === now.getDate()
+      );
+    }
+    return false;
+  });
+
+  const nextSeq = String(todayCustomers.length + 1).padStart(2, '0');
+  return `${datePrefix}${nextSeq}`;
+}
 
 export default function Customers() {
+  const currentUser = useAuthStore((state) => state.user);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<any>(null);
@@ -23,6 +51,8 @@ export default function Customers() {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [staffList, setStaffList] = useState<any[]>([]);
+  const [franchises, setFranchises] = useState<any[]>([]);
+  const [modalFranchiseId, setModalFranchiseId] = useState<string>('');
 
   // POS Pricing State
   const [selectedService, setSelectedService] = useState('exterior');
@@ -71,7 +101,16 @@ export default function Customers() {
   useEffect(() => {
     fetchCustomers();
     fetchStaff();
+    fetchFranchises();
   }, []);
+
+  const fetchFranchises = async () => {
+    try {
+      const res = await fetch('/api/franchises');
+      const data = await res.json();
+      if (res.ok) setFranchises(data || []);
+    } catch (e) {}
+  };
 
   const fetchStaff = async () => {
     try {
@@ -119,7 +158,7 @@ export default function Customers() {
         </div>
         <button 
           onClick={() => {
-            setGeneratedKot(`KOT-${Math.floor(10000 + Math.random() * 90000)}`);
+            setGeneratedKot(generateKotNumber(customers));
             setShowAddModal(true);
           }}
           className="btn-primary flex items-center gap-2"
@@ -278,7 +317,11 @@ export default function Customers() {
 
               const payload = {
                 name, phone, carModel, carRegistration, paymentMethod, notes,
-                franchiseId: 1, uploadedBy: 1, kot: generatedKot, service: selectedService,
+                franchiseId: currentUser?.role === 'Super Admin' 
+                  ? (parseInt(modalFranchiseId) || currentUser?.franchiseId || 1) 
+                  : (currentUser?.franchiseId || 1),
+                uploadedBy: currentUser?.id || 1, 
+                kot: generatedKot, service: selectedService,
                 vehicleType, addon: selectedAddon, addonAmount: Number(addonAmount) || 0,
                 discountType, discount: Number(discount) || 0, discountNote, finalTotal, status: 'ongoing'
               };
@@ -319,11 +362,25 @@ export default function Customers() {
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-white/60">Franchise Branch</label>
-                  <select className="input-field bg-dryft-dark">
-                    <option>Downtown</option>
-                    <option>Uptown</option>
-                    <option>Westside</option>
-                  </select>
+                  {currentUser?.role === 'Super Admin' ? (
+                    <select 
+                      className="input-field bg-dryft-dark text-white border-white/10"
+                      value={modalFranchiseId}
+                      onChange={(e) => setModalFranchiseId(e.target.value)}
+                    >
+                      <option value="">Default Branch ({currentUser?.franchise || 'HQ'})</option>
+                      {franchises.map((f) => (
+                        <option key={f.id} value={f.id}>{f.name}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input 
+                      type="text" 
+                      className="input-field bg-white/5 text-white/60 cursor-not-allowed font-medium" 
+                      value={currentUser?.franchise || 'Assigned Branch'} 
+                      readOnly 
+                    />
+                  )}
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-white/60">KOT / Ticket No.</label>

@@ -12,12 +12,20 @@ export async function GET(request: Request) {
       orderBy: { created_at: 'desc' }
     });
 
+    const now = new Date();
     const staffWithStats = staff.map(s => {
       const completedJobs = s.jobsDone.filter(j => j.status === 'completed');
+      const todayJobs = completedJobs.filter(j => {
+        if (!j.created_at) return false;
+        const jDate = new Date(j.created_at);
+        return jDate.toDateString() === now.toDateString();
+      });
       const totalWorth = completedJobs.reduce((sum, j) => sum + (j.finalTotal || 0), 0);
       return {
         ...s,
+        dailyTarget: s.dailyTarget || 10,
         jobsDoneCount: completedJobs.length,
+        todayJobsCount: todayJobs.length > 0 ? todayJobs.length : completedJobs.length,
         totalWorth
       };
     });

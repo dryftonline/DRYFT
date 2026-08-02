@@ -56,6 +56,28 @@ export async function POST(request: Request) {
       });
     }
 
+    let finalKot = kot;
+    if (!finalKot) {
+      const now = new Date();
+      const yy = String(now.getFullYear()).slice(-2);
+      const mm = String(now.getMonth() + 1).padStart(2, '0');
+      const dd = String(now.getDate()).padStart(2, '0');
+      const datePrefix = `${yy}${mm}${dd}`;
+
+      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+
+      const countToday = await prisma.customer.count({
+        where: {
+          created_at: {
+            gte: startOfDay,
+            lte: endOfDay,
+          }
+        }
+      });
+      finalKot = `${datePrefix}${String(countToday + 1).padStart(2, '0')}`;
+    }
+
     const customer = await prisma.customer.create({
       data: {
         name,
@@ -66,7 +88,7 @@ export async function POST(request: Request) {
         uploadedBy: parseInt(uploadedBy) || fallbackUser.id,
         notes,
         status: status || 'ongoing',
-        kot,
+        kot: finalKot,
         service,
         vehicleType,
         addon,

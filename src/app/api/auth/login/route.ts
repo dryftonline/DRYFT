@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma';
 
 export async function POST(request: Request) {
   try {
-    const { username, password } = await request.json();
+    const { username, password, selectedFranchiseId } = await request.json();
 
     const user = await prisma.user.findUnique({
       where: { username },
@@ -14,6 +14,14 @@ export async function POST(request: Request) {
 
     if (!user) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+    }
+
+    if (user.status === 'pending') {
+      return NextResponse.json({ error: 'Your account is pending Super Admin approval.' }, { status: 403 });
+    }
+
+    if (user.status === 'rejected') {
+      return NextResponse.json({ error: 'Your registration request was rejected by Super Admin.' }, { status: 403 });
     }
 
     if (user.status !== 'active') {
@@ -25,12 +33,25 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
 
+    let activeFranchiseId = user.franchiseId;
+    let activeFranchiseName = user.franchise ? user.franchise.name : null;
+
+    if (selectedFranchiseId) {
+      const customFranchise = await prisma.franchise.findUnique({
+        where: { id: parseInt(selectedFranchiseId) }
+      });
+      if (customFranchise) {
+        activeFranchiseId = customFranchise.id;
+        activeFranchiseName = customFranchise.name;
+      }
+    }
+
     const token = jwt.sign(
       { 
         id: user.id, 
         username: user.username, 
         role: user.role.name, 
-        franchiseId: user.franchiseId,
+        franchiseId: activeFranchiseId,
         staffId: user.staffId,
         accessibleModules: user.accessibleModules 
       },
@@ -44,8 +65,10 @@ export async function POST(request: Request) {
         id: user.id,
         username: user.username,
         role: user.role.name,
-        franchise: user.franchise ? user.franchise.name : null,
-        franchiseId: user.franchiseId,
+        franchise: activeFranchiseName,
+        franchiseId: activeFranchiseId,
+        assignedFranchiseId: user.franchiseId,
+        assignedFranchiseName: user.franchise ? user.franchise.name : null,
         staffId: user.staffId,
         plainPassword: user.plainPassword,
         accessibleModules: user.accessibleModules

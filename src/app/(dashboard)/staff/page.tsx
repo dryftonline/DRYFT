@@ -92,6 +92,7 @@ export default function StaffManagement() {
                 <th className="px-6 py-4 font-semibold">Staff Details</th>
                 <th className="px-6 py-4 font-semibold">Role / Branch</th>
                  <th className="px-6 py-4 font-semibold">Jobs Done</th>
+                <th className="px-6 py-4 font-semibold">Daily Target Goal</th>
                 <th className="px-6 py-4 font-semibold">Total Revenue (₹)</th>
                 <th className="px-6 py-4 font-semibold text-right">Actions</th>
               </tr>
@@ -101,6 +102,10 @@ export default function StaffManagement() {
                 s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                 s.role.toLowerCase().includes(searchTerm.toLowerCase())
               ).map((member) => {
+                const target = member.dailyTarget || 10;
+                const completed = member.todayJobsCount || member.jobsDoneCount || 0;
+                const percent = Math.min(100, Math.round((completed / target) * 100));
+
                 return (
                   <tr key={member.id} className="hover:bg-white/[0.02] transition-colors group">
                     <td className="px-6 py-4">
@@ -123,6 +128,23 @@ export default function StaffManagement() {
                         {member.jobsDoneCount || 0}
                       </span>
                     </td>
+                    
+                    {/* Goal Progress Column */}
+                    <td className="px-6 py-4 min-w-[160px]">
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-bold text-amber-400">{completed} / {target} Cars</span>
+                          <span className="text-white/60 font-mono">{percent}%</span>
+                        </div>
+                        <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden">
+                          <div 
+                            className="bg-gradient-to-r from-amber-500 to-emerald-400 h-full rounded-full transition-all duration-500"
+                            style={{ width: `${percent}%` }}
+                          />
+                        </div>
+                      </div>
+                    </td>
+
                     <td className="px-6 py-4">
                       <span className="text-sm font-bold text-emerald-400">
                         ₹{member.totalWorth || 0}
@@ -183,6 +205,7 @@ export default function StaffManagement() {
                 phone: formData.get('phone'),
                 role: formData.get('role'),
                 franchiseId: formData.get('franchiseId'),
+                dailyTarget: formData.get('dailyTarget'),
               };
 
               try {
@@ -210,6 +233,10 @@ export default function StaffManagement() {
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-white/60">Phone Number</label>
                   <input type="text" name="phone" className="input-field" defaultValue={editingStaff.phone} required />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-white/60">Daily Target Goal (Cars / Jobs)</label>
+                  <input type="number" name="dailyTarget" min="1" className="input-field" defaultValue={editingStaff.dailyTarget || 10} required />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">

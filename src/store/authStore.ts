@@ -7,6 +7,8 @@ interface User {
   role: string;
   franchise: string | null;
   franchiseId: number | null;
+  activeFranchiseId?: number | null;
+  activeFranchiseName?: string | null;
   staffId: number | null;
   plainPassword?: string;
   accessibleModules?: string[];
@@ -18,6 +20,7 @@ interface AuthState {
   isAuthenticated: boolean;
   login: (userData: User, token: string) => void;
   logout: () => void;
+  setActiveFranchise: (franchiseId: number, franchiseName: string) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -38,6 +41,16 @@ export const useAuthStore = create<AuthState>()(
         token: null, 
         isAuthenticated: false 
       }),
+
+      setActiveFranchise: (franchiseId, franchiseName) => set((state) => ({
+        user: state.user ? {
+          ...state.user,
+          activeFranchiseId: franchiseId,
+          activeFranchiseName: franchiseName,
+          franchiseId: franchiseId,
+          franchise: franchiseName
+        } : null
+      }))
     }),
     {
       name: 'dryft-auth-storage',

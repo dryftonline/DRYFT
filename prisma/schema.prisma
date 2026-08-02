@@ -164,6 +164,7 @@ model Staff {
   name        String
   phone       String?
   role        String            @default("Washer")
+  dailyTarget Int               @default(10)
   franchiseId Int
   status      String            @default("active")
   created_at  DateTime          @default(now())

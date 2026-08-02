@@ -47,7 +47,7 @@ export async function PATCH(
   try {
     const id = parseInt(params.id);
     const body = await request.json();
-    const { name, phone, role, franchiseId, status } = body;
+    const { name, phone, role, franchiseId, status, dailyTarget } = body;
 
     const staff = await prisma.staff.update({
       where: { id },
@@ -56,7 +56,8 @@ export async function PATCH(
         phone,
         role,
         franchiseId: franchiseId ? parseInt(franchiseId) : undefined,
-        status
+        status,
+        ...(dailyTarget !== undefined && { dailyTarget: parseInt(dailyTarget) || 10 })
       }
     });
 
