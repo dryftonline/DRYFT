@@ -18,12 +18,14 @@ import {
   Eye,
   EyeOff,
   Clock,
-  Key
+  Key,
+  RefreshCw
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 export default function UserManagement() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'active' | 'inactive' | 'rejected'>('all');
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingUser, setEditingUser] = useState<any>(null);
   const [users, setUsers] = useState<any[]>([]);
@@ -40,18 +42,25 @@ export default function UserManagement() {
   useEffect(() => {
     fetchUsers();
     fetchFranchises();
+
+    // Auto refresh users every 5 seconds so new employee signups show up live
+    const interval = setInterval(() => {
+      fetchUsers(true);
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, []);
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const res = await fetch('/api/users');
       const data = await res.json();
-      if (res.ok) setUsers(data);
+      if (res.ok) setUsers(data || []);
     } catch (error) {
-      toast.error('Failed to load users');
+      if (!silent) toast.error('Failed to load users');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
@@ -59,7 +68,7 @@ export default function UserManagement() {
     try {
       const res = await fetch('/api/franchises');
       const data = await res.json();
-      if (res.ok) setFranchises(data);
+      if (res.ok) setFranchises(data || []);
     } catch (error) {}
   };
 
@@ -126,14 +135,38 @@ export default function UserManagement() {
     }));
   };
 
+  // Filter users by search term and tab selection
   const pendingUsers = users.filter(u => u.status === 'pending');
-  const activeAndOtherUsers = users.filter(u => u.status !== 'pending');
+
+  const filteredUsers = users.filter(u => {
+    const matchesSearch = 
+      u.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (u.email && u.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (u.staff?.name && u.staff.name.toLowerCase().includes(searchTerm.toLowerCase()));
+
+    if (!matchesSearch) return false;
+
+    if (statusFilter === 'pending') return u.status === 'pending';
+    if (statusFilter === 'active') return u.status === 'active';
+    if (statusFilter === 'inactive') return u.status === 'inactive' || u.status === 'rejected';
+    
+    return true; // 'all'
+  });
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white">User Management</h1>
+          <h1 className="text-2xl font-bold text-white flex items-center gap-3">
+            User Management
+            <button 
+              onClick={() => fetchUsers(false)} 
+              className="p-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-white/40 hover:text-white transition-colors"
+              title="Refresh Users List"
+            >
+              <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
+            </button>
+          </h1>
           <p className="text-white/40 text-sm">Manage system administrators, staff registrations, and approval requests.</p>
         </div>
         <button 
@@ -147,7 +180,10 @@ export default function UserManagement() {
 
       {/* Stats Summary */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="glass-panel p-4 flex items-center gap-4">
+        <div 
+          onClick={() => setStatusFilter('all')}
+          className={`glass-panel p-4 flex items-center gap-4 cursor-pointer transition-all ${statusFilter === 'all' ? 'border-dryft-beige' : 'hover:border-white/20'}`}
+        >
           <div className="p-3 rounded-xl bg-blue-500/10 text-blue-500">
             <UserIcon size={20} />
           </div>
@@ -156,7 +192,11 @@ export default function UserManagement() {
             <p className="text-xl font-bold text-white">{users.length}</p>
           </div>
         </div>
-        <div className="glass-panel p-4 flex items-center gap-4">
+
+        <div 
+          onClick={() => setStatusFilter('active')}
+          className={`glass-panel p-4 flex items-center gap-4 cursor-pointer transition-all ${statusFilter === 'active' ? 'border-emerald-500' : 'hover:border-white/20'}`}
+        >
           <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-500">
             <Shield size={20} />
           </div>
@@ -165,9 +205,16 @@ export default function UserManagement() {
             <p className="text-xl font-bold text-white">{users.filter(u => u.status === 'active').length}</p>
           </div>
         </div>
-        <div className="glass-panel p-4 flex items-center gap-4">
-          <div className="p-3 rounded-xl bg-amber-500/10 text-amber-500">
+
+        <div 
+          onClick={() => setStatusFilter('pending')}
+          className={`glass-panel p-4 flex items-center gap-4 cursor-pointer transition-all ${statusFilter === 'pending' ? 'border-amber-500' : 'hover:border-white/20'}`}
+        >
+          <div className="p-3 rounded-xl bg-amber-500/10 text-amber-500 relative">
             <Clock size={20} />
+            {pendingUsers.length > 0 && (
+              <span className="absolute -top-1 -right-1 w-3 h-3 bg-amber-500 rounded-full animate-ping" />
+            )}
           </div>
           <div>
             <p className="text-xs text-white/40 uppercase font-bold tracking-wider">Pending Signup Requests</p>
@@ -176,20 +223,23 @@ export default function UserManagement() {
         </div>
       </div>
 
-      {/* Pending Signup Requests Section */}
+      {/* Pending Signup Requests Banner Card */}
       {pendingUsers.length > 0 && (
-        <div className="glass-panel p-6 border-amber-500/30 bg-amber-500/[0.02]">
-          <div className="flex items-center gap-2 mb-4">
-            <Clock className="text-amber-400" size={20} />
-            <h2 className="text-lg font-bold text-white">Pending Employee Registration Requests</h2>
-            <span className="bg-amber-500/20 text-amber-300 text-xs px-2 py-0.5 rounded-full font-bold">
-              {pendingUsers.length} Pending
-            </span>
+        <div className="glass-panel p-6 border-amber-500/40 bg-amber-500/[0.03] shadow-xl">
+          <div className="flex justify-between items-center mb-4">
+            <div className="flex items-center gap-2">
+              <Clock className="text-amber-400 animate-pulse" size={22} />
+              <h2 className="text-lg font-bold text-white">Pending Employee Registration Requests</h2>
+              <span className="bg-amber-500/20 text-amber-300 text-xs px-2.5 py-0.5 rounded-full font-bold border border-amber-500/30">
+                {pendingUsers.length} Action Needed
+              </span>
+            </div>
+            <span className="text-xs text-white/40 italic">New employee signups requiring approval</span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {pendingUsers.map((pUser) => (
-              <div key={pUser.id} className="p-4 rounded-xl bg-white/5 border border-white/10 flex flex-col justify-between gap-4">
+              <div key={pUser.id} className="p-4 rounded-xl bg-white/5 border border-white/10 hover:border-amber-500/50 transition-all flex flex-col justify-between gap-4 shadow-lg">
                 <div className="flex justify-between items-start">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-amber-500/20 text-amber-300 font-bold flex items-center justify-center border border-amber-500/30">
@@ -197,7 +247,7 @@ export default function UserManagement() {
                     </div>
                     <div>
                       <p className="text-sm font-bold text-white">{pUser.username}</p>
-                      <p className="text-xs text-white/50">{pUser.staff?.name || pUser.email || 'Employee Request'}</p>
+                      <p className="text-xs text-white/50">{pUser.staff?.name || pUser.email || 'Employee Signup'}</p>
                     </div>
                   </div>
                   <span className="text-[10px] font-bold uppercase px-2 py-1 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
@@ -205,13 +255,13 @@ export default function UserManagement() {
                   </span>
                 </div>
 
-                <div className="space-y-1.5 text-xs text-white/60 bg-black/30 p-2.5 rounded-lg border border-white/5">
+                <div className="space-y-2 text-xs text-white/60 bg-black/40 p-3 rounded-lg border border-white/5">
                   <div className="flex justify-between items-center">
                     <span>Branch:</span>
                     <span className="font-semibold text-white">{pUser.franchise?.name || 'All Branches'}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="flex items-center gap-1"><Key size={12} /> Password:</span>
+                    <span className="flex items-center gap-1"><Key size={12} className="text-amber-400" /> Password:</span>
                     <div className="flex items-center gap-2">
                       <span className="font-mono text-emerald-400 font-bold">
                         {visiblePasswords[pUser.id] ? (pUser.plainPassword || 'N/A') : '••••••••'}
@@ -249,23 +299,43 @@ export default function UserManagement() {
         </div>
       )}
 
-      {/* Filters & Search */}
-      <div className="flex flex-col md:flex-row gap-4">
-        <div className="relative flex-1">
+      {/* Filters, Status Tabs & Search */}
+      <div className="flex flex-col md:flex-row gap-4 justify-between items-stretch md:items-center">
+        {/* Status Filter Tabs */}
+        <div className="flex bg-white/5 p-1 rounded-xl border border-white/10 overflow-x-auto">
+          {[
+            { id: 'all', label: 'All Users', count: users.length },
+            { id: 'pending', label: 'Pending Requests', count: pendingUsers.length, color: 'text-amber-400' },
+            { id: 'active', label: 'Active Users', count: users.filter(u => u.status === 'active').length },
+            { id: 'inactive', label: 'Inactive / Rejected', count: users.filter(u => u.status === 'inactive' || u.status === 'rejected').length }
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setStatusFilter(tab.id as any)}
+              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 whitespace-nowrap ${
+                statusFilter === tab.id 
+                  ? 'bg-dryft-beige text-dryft-dark shadow-md' 
+                  : 'text-white/40 hover:text-white'
+              }`}
+            >
+              <span>{tab.label}</span>
+              <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${statusFilter === tab.id ? 'bg-dryft-dark text-dryft-beige' : 'bg-white/10 text-white/60'}`}>
+                {tab.count}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        {/* Search Bar */}
+        <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" size={18} />
           <input 
             type="text" 
-            placeholder="Search by username or email..." 
+            placeholder="Search by username, email or name..." 
             className="input-field pl-10"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
-        </div>
-        <div className="flex gap-2">
-          <button className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white/60 hover:text-white flex items-center gap-2">
-            <Filter size={18} />
-            <span>Role: All</span>
-          </button>
         </div>
       </div>
 
@@ -285,18 +355,26 @@ export default function UserManagement() {
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {activeAndOtherUsers.filter(u => 
-                u.username.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                (u.email && u.email.toLowerCase().includes(searchTerm.toLowerCase()))
-              ).map((user) => (
+              {filteredUsers.map((user) => (
                 <tr key={user.id} className="hover:bg-white/[0.02] transition-colors group">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-dryft-beige/20 to-dryft-beige/5 flex items-center justify-center text-dryft-beige font-bold border border-white/10">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold border ${
+                        user.status === 'pending' 
+                          ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' 
+                          : 'bg-gradient-to-br from-dryft-beige/20 to-dryft-beige/5 text-dryft-beige border-white/10'
+                      }`}>
                         {user.username[0].toUpperCase()}
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-white">{user.username}</p>
+                        <p className="text-sm font-medium text-white flex items-center gap-2">
+                          {user.username}
+                          {user.status === 'pending' && (
+                            <span className="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded font-bold uppercase">
+                              New Request
+                            </span>
+                          )}
+                        </p>
                         <p className="text-xs text-white/40">{user.staff?.name || user.email || 'System User'}</p>
                       </div>
                     </div>
@@ -330,42 +408,72 @@ export default function UserManagement() {
                   </td>
 
                   <td className="px-6 py-4">
-                    <button 
-                      onClick={() => toggleStatus(user.id, user.status)}
-                      className={cn(
-                        "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase transition-colors",
-                        user.status === 'active' 
-                          ? "bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20" 
-                          : user.status === 'rejected'
-                          ? "bg-rose-500/20 text-rose-400 border border-rose-500/30"
-                          : "bg-rose-500/10 text-rose-500 hover:bg-rose-500/20"
-                      )}
-                    >
-                      <div className={cn("w-1.5 h-1.5 rounded-full", user.status === 'active' ? "bg-emerald-500" : "bg-rose-500")} />
-                      {user.status}
-                    </button>
+                    {user.status === 'pending' ? (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                        <Clock size={12} /> Pending Approval
+                      </span>
+                    ) : (
+                      <button 
+                        onClick={() => toggleStatus(user.id, user.status)}
+                        className={cn(
+                          "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase transition-colors",
+                          user.status === 'active' 
+                            ? "bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20" 
+                            : user.status === 'rejected'
+                            ? "bg-rose-500/20 text-rose-400 border border-rose-500/30"
+                            : "bg-rose-500/10 text-rose-500 hover:bg-rose-500/20"
+                        )}
+                      >
+                        <div className={cn("w-1.5 h-1.5 rounded-full", user.status === 'active' ? "bg-emerald-500" : "bg-rose-500")} />
+                        {user.status}
+                      </button>
+                    )}
                   </td>
                   <td className="px-6 py-4 text-xs text-white/40">{user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}</td>
+                  
                   <td className="px-6 py-4 text-right">
-                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button 
-                        onClick={() => setEditingUser(user)}
-                        className="p-2 hover:bg-white/5 rounded-lg text-white/60 hover:text-white"
-                      >
-                        <Edit2 size={16} />
-                      </button>
-                      <button 
-                        onClick={() => handleDelete(user.id)}
-                        className="p-2 hover:bg-red-500/10 rounded-lg text-white/60 hover:text-red-500"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
+                    {user.status === 'pending' ? (
+                      <div className="flex justify-end gap-2">
+                        <button
+                          onClick={() => handleApproval(user.id, 'active')}
+                          className="px-2.5 py-1 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-bold transition-colors flex items-center gap-1"
+                        >
+                          <CheckCircle2 size={14} /> Accept
+                        </button>
+                        <button
+                          onClick={() => handleApproval(user.id, 'rejected')}
+                          className="px-2.5 py-1 bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 rounded-lg text-xs font-bold transition-colors flex items-center gap-1 border border-rose-500/30"
+                        >
+                          <XCircle size={14} /> Reject
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button 
+                          onClick={() => setEditingUser(user)}
+                          className="p-2 hover:bg-white/5 rounded-lg text-white/60 hover:text-white"
+                        >
+                          <Edit2 size={16} />
+                        </button>
+                        <button 
+                          onClick={() => handleDelete(user.id)}
+                          className="p-2 hover:bg-red-500/10 rounded-lg text-white/60 hover:text-red-500"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+          {filteredUsers.length === 0 && !loading && (
+            <div className="py-16 text-center">
+              <UserIcon className="mx-auto text-white/20 mb-3" size={36} />
+              <p className="text-white/40 text-sm">No users found matching your filter criteria.</p>
+            </div>
+          )}
         </div>
       </div>
 
