@@ -78,6 +78,18 @@ export async function POST(request: Request) {
       finalKot = `${datePrefix}${String(countToday + 1).padStart(2, '0')}`;
     }
 
+    const finalUploadedById = parseInt(uploadedBy) || fallbackUser.id;
+    let finalStaffId = body.staffId ? parseInt(body.staffId) : null;
+
+    if (!finalStaffId && finalUploadedById) {
+      const uploaderUser = await prisma.user.findUnique({
+        where: { id: finalUploadedById }
+      });
+      if (uploaderUser && uploaderUser.staffId) {
+        finalStaffId = uploaderUser.staffId;
+      }
+    }
+
     const customer = await prisma.customer.create({
       data: {
         name,
@@ -85,7 +97,8 @@ export async function POST(request: Request) {
         carRegistration,
         carModel,
         franchiseId: parseInt(franchiseId) || fallbackFranchise.id,
-        uploadedBy: parseInt(uploadedBy) || fallbackUser.id,
+        uploadedBy: finalUploadedById,
+        staffId: finalStaffId,
         notes,
         status: status || 'ongoing',
         kot: finalKot,

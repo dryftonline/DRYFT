@@ -72,7 +72,7 @@ export default function Dashboard() {
   const [stats, setStats] = useState({ customers: 0, franchises: 0, stock: 0 });
   const [myStaffGoal, setMyStaffGoal] = useState<any>(null);
 
-  useEffect(() => {
+  const loadDashboardData = () => {
     Promise.all([
       fetch('/api/customers').then(res => res.ok ? res.json() : []),
       fetch('/api/franchises').then(res => res.ok ? res.json() : []),
@@ -85,7 +85,6 @@ export default function Dashboard() {
         stock: st.length || 0
       });
 
-      // Find staff matching logged in user or fallback to first staff member
       if (staffList && staffList.length > 0) {
         let matched = staffList.find((s: any) => s.id === currentUser?.staffId);
         if (!matched && currentUser?.username) {
@@ -94,6 +93,17 @@ export default function Dashboard() {
         setMyStaffGoal(matched || staffList[0]);
       }
     }).catch(console.error);
+  };
+
+  useEffect(() => {
+    loadDashboardData();
+
+    // Auto refresh stats and task done bar every 4 seconds
+    const interval = setInterval(() => {
+      loadDashboardData();
+    }, 4000);
+
+    return () => clearInterval(interval);
   }, [currentUser]);
 
   const target = myStaffGoal?.dailyTarget || 10;

@@ -7,28 +7,39 @@ export async function GET(request: Request) {
     const staff = await prisma.staff.findMany({
       include: {
         franchise: true,
-        jobsDone: true
+        user: true
       },
       orderBy: { created_at: 'desc' }
     });
 
     const now = new Date();
-    const staffWithStats = staff.map(s => {
-      const completedJobs = s.jobsDone.filter(j => j.status === 'completed');
+    const staffWithStats = await Promise.all(staff.map(async s => {
+      // Find completed jobs either assigned directly to this staff member OR uploaded by this staff member's user account
+      const completedJobs = await prisma.customer.findMany({
+        where: {
+          status: 'completed',
+          OR: [
+            { staffId: s.id },
+            { uploader: { staffId: s.id } }
+          ]
+        }
+      });
+
       const todayJobs = completedJobs.filter(j => {
         if (!j.created_at) return false;
         const jDate = new Date(j.created_at);
         return jDate.toDateString() === now.toDateString();
       });
+
       const totalWorth = completedJobs.reduce((sum, j) => sum + (j.finalTotal || 0), 0);
       return {
         ...s,
         dailyTarget: s.dailyTarget || 10,
         jobsDoneCount: completedJobs.length,
-        todayJobsCount: todayJobs.length > 0 ? todayJobs.length : completedJobs.length,
+        todayJobsCount: todayJobs.length,
         totalWorth
       };
-    });
+    }));
 
     return NextResponse.json(staffWithStats);
   } catch (error: any) {

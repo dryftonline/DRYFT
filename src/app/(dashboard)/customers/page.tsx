@@ -634,7 +634,7 @@ export default function Customers() {
                   body: JSON.stringify({
                     status: 'completed',
                     paymentMethod: completionPayment,
-                    staffId: completionStaffId ? parseInt(completionStaffId) : null,
+                    staffId: completionStaffId ? parseInt(completionStaffId) : (currentUser?.staffId || completingCustomer.staffId || null),
                     notes: completionNotes 
                       ? `${completingCustomer.notes || ''}\n\nCompletion Note: ${completionNotes}`.trim() 
                       : completingCustomer.notes
