@@ -55,6 +55,18 @@ export default function Customers() {
   const [franchises, setFranchises] = useState<any[]>([]);
   const [modalFranchiseId, setModalFranchiseId] = useState<string>('');
 
+  // Form input states for Add Modal
+  const [addName, setAddName] = useState('');
+  const [addPhone, setAddPhone] = useState('');
+  const [addCarModel, setAddCarModel] = useState('');
+  const [addCarRegistration, setAddCarRegistration] = useState('');
+
+  // Form input states for Edit Modal
+  const [editName, setEditName] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [editCarModel, setEditCarModel] = useState('');
+  const [editCarRegistration, setEditCarRegistration] = useState('');
+
   // POS Pricing State
   const [selectedService, setSelectedService] = useState('exterior');
   const [vehicleType, setVehicleType] = useState('standard');
@@ -63,6 +75,7 @@ export default function Customers() {
   const [discount, setDiscount] = useState<number | ''>('');
   const [discountType, setDiscountType] = useState<'percent' | 'fixed'>('percent');
   const [discountNote, setDiscountNote] = useState('');
+
   const [generatedKot, setGeneratedKot] = useState('');
   
   const [completingCustomer, setCompletingCustomer] = useState<any>(null);
@@ -89,15 +102,23 @@ export default function Customers() {
       case 'engine_bay': return { min: 300, max: 1000 };
       case 'headlight_restoration': return { min: 799, max: 2000 };
       case 'tyre_polish': return { min: 100, max: 100 };
-      default: return { min: 0, max: 99999 };
+      default: return { min: 0, max: 0 };
     }
   };
-  const slab = getAddonSlab(selectedAddon);
 
-  const subTotal = basePrice + vehicleAddon + (Number(addonAmount) || 0);
-  const finalTotal = discountType === 'percent' 
-    ? subTotal - (subTotal * (Number(discount) || 0) / 100)
-    : subTotal - (Number(discount) || 0);
+  const slab = getAddonSlab(selectedAddon);
+  let currentAddonVal = Number(addonAmount) || 0;
+  let subtotal = basePrice + vehicleAddon + currentAddonVal;
+
+  let discountVal = Number(discount) || 0;
+  let finalDiscount = 0;
+  if (discountType === 'percent') {
+    finalDiscount = (subtotal * discountVal) / 100;
+  } else {
+    finalDiscount = discountVal;
+  }
+
+  let finalTotal = Math.max(0, subtotal - finalDiscount);
 
   useEffect(() => {
     fetchCustomers();
@@ -105,12 +126,20 @@ export default function Customers() {
     fetchFranchises();
   }, []);
 
-  const fetchFranchises = async () => {
+  const fetchCustomers = async () => {
     try {
-      const res = await fetch('/api/franchises');
+      setLoading(true);
+      const res = await fetch('/api/customers');
       const data = await res.json();
-      if (res.ok) setFranchises(data || []);
-    } catch (e) {}
+      if (res.ok) {
+        setCustomers(data);
+        setGeneratedKot(generateKotNumber(data));
+      }
+    } catch (error) {
+      toast.error('Failed to load customers');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const fetchStaff = async () => {
@@ -118,20 +147,15 @@ export default function Customers() {
       const res = await fetch('/api/staff');
       const data = await res.json();
       if (res.ok) setStaffList(data);
-    } catch (e) {}
+    } catch (error) {}
   };
 
-  const fetchCustomers = async () => {
+  const fetchFranchises = async () => {
     try {
-      setLoading(true);
-      const res = await fetch('/api/customers');
+      const res = await fetch('/api/franchises');
       const data = await res.json();
-      if (res.ok) setCustomers(data);
-    } catch (error) {
-      toast.error('Failed to load customers');
-    } finally {
-      setLoading(false);
-    }
+      if (res.ok) setFranchises(data);
+    } catch (error) {}
   };
 
   const handleDelete = async (id: number) => {
@@ -140,7 +164,7 @@ export default function Customers() {
         const res = await fetch(`/api/customers/${id}`, { method: 'DELETE' });
         if (res.ok) {
           setCustomers(customers.filter(c => c.id !== id));
-          toast.success('Customer record deleted permanently');
+          toast.success('Customer record deleted successfully');
         } else {
           toast.error('Failed to delete customer');
         }
@@ -150,18 +174,50 @@ export default function Customers() {
     }
   };
 
+  const openAddModal = () => {
+    setAddName('');
+    setAddPhone('');
+    setAddCarModel('');
+    setAddCarRegistration('');
+    setSelectedService('exterior');
+    setVehicleType('standard');
+    setSelectedAddon('');
+    setAddonAmount('');
+    setDiscount('');
+    setDiscountType('percent');
+    setDiscountNote('');
+    setGeneratedKot(generateKotNumber(customers));
+    setShowAddModal(true);
+  };
+
+  const openEditModal = (customer: any) => {
+    setEditingCustomer(customer);
+    setEditName(customer.name || '');
+    setEditPhone(customer.phone || '');
+    setEditCarModel(customer.carRegistration ? customer.carModel : customer.car || '');
+    setEditCarRegistration((customer.carRegistration || customer.plate || '').toUpperCase());
+  };
+
+  const filteredCustomers = customers.filter(customer => {
+    const search = searchTerm.toLowerCase();
+    return (
+      (customer.name && customer.name.toLowerCase().includes(search)) ||
+      (customer.phone && customer.phone.toLowerCase().includes(search)) ||
+      (customer.carRegistration && customer.carRegistration.toLowerCase().includes(search)) ||
+      (customer.plate && customer.plate.toLowerCase().includes(search)) ||
+      (customer.kot && customer.kot.toLowerCase().includes(search))
+    );
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white">Billing & Invoices</h1>
-          <p className="text-white/40 text-sm">Manage invoices, services, add-ons, and customer billing records across all branches.</p>
+          <p className="text-white/40 text-sm">Manage Invoices, services, add-ons, and customer billing records across all branches.</p>
         </div>
         <button 
-          onClick={() => {
-            setGeneratedKot(generateKotNumber(customers));
-            setShowAddModal(true);
-          }}
+          onClick={openAddModal}
           className="btn-primary flex items-center gap-2"
         >
           <Plus size={18} />
@@ -181,15 +237,10 @@ export default function Customers() {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <div className="flex gap-2">
-          <button 
-            onClick={() => toast.success('Filters applied')}
-            className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white/60 hover:text-white flex items-center gap-2"
-          >
-            <Filter size={18} />
-            <span>Filters</span>
-          </button>
-        </div>
+        <button className="px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white/60 hover:text-white flex items-center gap-2 transition-colors">
+          <Filter size={18} />
+          <span>Filters</span>
+        </button>
       </div>
 
       {/* Customers Table */}
@@ -207,65 +258,60 @@ export default function Customers() {
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {customers.filter(c => 
-                c.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                c.plate.toLowerCase().includes(searchTerm.toLowerCase())
-              ).map((customer) => (
+              {filteredCustomers.map((customer) => (
                 <tr key={customer.id} className="hover:bg-white/[0.02] transition-colors group">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-white/20">
+                      <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/40">
                         <ImageIcon size={20} />
                       </div>
                       <div>
                         <p className="text-sm font-medium text-white">{customer.name}</p>
-                        <p className="text-xs text-white/40">{customer.carModel}</p>
+                        <p className="text-xs text-white/40">{customer.carRegistration || customer.carModel || customer.car}</p>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="text-sm font-mono bg-white/5 px-2 py-1 rounded border border-white/10">
-                      {customer.carRegistration}
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/5 border border-white/10 text-white font-mono text-xs font-bold uppercase tracking-wider">
+                      {customer.carRegistration || customer.plate || 'NO PLATE'}
                     </span>
-                    <p className="text-xs text-white/40 mt-1">{customer.kot || 'N/A'}</p>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-white/60">
-                    {customer.franchise?.name || 'Main Branch'}
-                    <p className="text-xs text-white/40 mt-1 capitalize">{customer.service?.replace('_', ' ') || 'Unknown'}</p>
-                  </td>
-                  <td className="px-6 py-4 text-xs text-white/40">
-                    <span className="capitalize">{customer.paymentMethod || 'Cash'}</span>
-                    <p className="text-sm text-emerald-400 mt-1 font-bold">₹{customer.finalTotal || '0'}</p>
+                    <p className="text-[11px] text-white/40 font-mono mt-1">{customer.kot || 'N/A'}</p>
                   </td>
                   <td className="px-6 py-4">
-                    {customer.status === 'completed' ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-500/10 text-emerald-500 text-[10px] font-bold uppercase">
-                        <CheckCircle2 size={10} /> Completed
-                      </span>
-                    ) : customer.status === 'cancelled' ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-rose-500/10 text-rose-500 text-[10px] font-bold uppercase">
-                        <X size={10} /> Cancelled
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-amber-500/10 text-amber-500 text-[10px] font-bold uppercase">
-                        <Clock size={10} /> Ongoing
-                      </span>
-                    )}
+                    <p className="text-sm text-white font-medium">{customer.franchise?.name || 'Main Branch'}</p>
+                    <p className="text-xs text-white/40 capitalize">{customer.service ? customer.service.replace('_', ' ') : 'Standard Wash'}</p>
+                  </td>
+                  <td className="px-6 py-4">
+                    <p className="text-xs text-white/40">{customer.paymentMethod || 'Cash'}</p>
+                    <p className="text-sm font-bold text-emerald-400">₹{customer.finalTotal ? customer.finalTotal.toFixed(0) : '250'}</p>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium capitalize ${
+                      customer.status === 'completed' 
+                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+                        : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                    }`}>
+                      {customer.status === 'completed' ? <CheckCircle2 size={12} /> : <Clock size={12} />}
+                      {customer.status || 'ongoing'}
+                    </span>
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      {customer.status !== 'completed' && customer.status !== 'cancelled' && (
+                      {customer.status !== 'completed' && (
                         <button 
-                          onClick={() => setCompletingCustomer(customer)}
-                          className="p-2 hover:bg-emerald-500/10 rounded-lg text-white/60 hover:text-emerald-500"
-                          title="Mark as Completed"
+                          onClick={() => {
+                            setCompletingCustomer(customer);
+                            setCompletionNotes('');
+                            setCompletionPayment('Cash');
+                            setCompletionStaffId('');
+                          }}
+                          className="px-2.5 py-1 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 rounded-lg text-xs font-bold transition-colors border border-emerald-500/30"
                         >
-                          <CheckCircle2 size={16} />
+                          Complete
                         </button>
                       )}
-                      <button onClick={() => toast.success('Viewing customer details')} className="p-2 hover:bg-white/5 rounded-lg text-white/60 hover:text-white"><Eye size={16} /></button>
                       <button 
-                        onClick={() => setEditingCustomer(customer)}
+                        onClick={() => openEditModal(customer)}
                         className="p-2 hover:bg-white/5 rounded-lg text-white/60 hover:text-white"
                       >
                         <Edit2 size={16} />
@@ -283,7 +329,7 @@ export default function Customers() {
             </tbody>
           </table>
         </div>
-        {customers.length === 0 && (
+        {customers.length === 0 && !loading && (
           <div className="py-20 text-center">
             <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4 text-white/20">
               <Search size={32} />
@@ -307,24 +353,40 @@ export default function Customers() {
             <form className="space-y-6" onSubmit={async (e) => {
               e.preventDefault();
               if (isSubmitting) return;
+
+              // Validate Phone Number Length
+              const cleanPhone = addPhone.replace(/\D/g, '');
+              if (cleanPhone.length !== 10) {
+                toast.error('Phone number must be exactly 10 digits!');
+                return;
+              }
+
               setIsSubmitting(true);
               const form = e.currentTarget as HTMLFormElement;
-              const name = (form.querySelector('input[placeholder="Full Name"]') as HTMLInputElement).value;
-              const phone = (form.querySelector('input[placeholder="+1..."]') as HTMLInputElement).value;
-              const carModel = (form.querySelector('input[placeholder="e.g. Toyota Camry"]') as HTMLInputElement).value;
-              const carRegistration = (form.querySelector('input[placeholder="Plate Number"]') as HTMLInputElement).value;
               const paymentMethod = (form.querySelectorAll('select')[1] as HTMLSelectElement).value;
               const notes = (form.querySelector('textarea') as HTMLTextAreaElement).value;
 
               const payload = {
-                name, phone, carModel, carRegistration, paymentMethod, notes,
+                name: addName, 
+                phone: cleanPhone, 
+                carModel: addCarModel, 
+                carRegistration: addCarRegistration.toUpperCase(), 
+                paymentMethod, 
+                notes,
                 franchiseId: currentUser?.role === 'Super Admin' 
                   ? (parseInt(modalFranchiseId) || currentUser?.franchiseId || 1) 
                   : (currentUser?.franchiseId || 1),
                 uploadedBy: currentUser?.id || 1, 
-                kot: generatedKot, service: selectedService,
-                vehicleType, addon: selectedAddon, addonAmount: Number(addonAmount) || 0,
-                discountType, discount: Number(discount) || 0, discountNote, finalTotal, status: 'ongoing'
+                kot: generatedKot, 
+                service: selectedService,
+                vehicleType, 
+                addon: selectedAddon, 
+                addonAmount: Number(addonAmount) || 0,
+                discountType, 
+                discount: Number(discount) || 0, 
+                discountNote, 
+                finalTotal, 
+                status: 'ongoing'
               };
 
               try {
@@ -346,21 +408,67 @@ export default function Customers() {
             }}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-white/60">Customer Name</label>
-                  <input type="text" className="input-field" placeholder="Full Name" required />
+                  <label className="text-sm font-medium text-white/60">
+                    Customer Name <span className="text-rose-500">*</span>
+                  </label>
+                  <input 
+                    type="text" 
+                    className="input-field" 
+                    placeholder="Full Name" 
+                    value={addName}
+                    onChange={(e) => setAddName(e.target.value)}
+                    required 
+                  />
                 </div>
+
+                {/* Mandatory 10-Digit Phone Number Input */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-white/60">Phone Number</label>
-                  <input type="text" className="input-field" placeholder="+1..." required />
+                  <label className="text-sm font-medium text-white/60">
+                    Phone Number <span className="text-rose-500">* (10 Digits)</span>
+                  </label>
+                  <input 
+                    type="text" 
+                    className="input-field font-mono" 
+                    placeholder="10-digit phone number" 
+                    value={addPhone}
+                    onChange={(e) => setAddPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                    maxLength={10}
+                    required 
+                  />
+                  {addPhone && addPhone.length !== 10 && (
+                    <p className="text-[11px] text-amber-400 font-medium">Please enter exactly 10 digits ({addPhone.length}/10)</p>
+                  )}
                 </div>
+
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-white/60">Car Model</label>
-                  <input type="text" className="input-field" placeholder="e.g. Toyota Camry" required />
+                  <label className="text-sm font-medium text-white/60">
+                    Car Model <span className="text-rose-500">*</span>
+                  </label>
+                  <input 
+                    type="text" 
+                    className="input-field" 
+                    placeholder="e.g. Toyota Camry" 
+                    value={addCarModel}
+                    onChange={(e) => setAddCarModel(e.target.value)}
+                    required 
+                  />
                 </div>
+
+                {/* Auto-Uppercase Registration / Plate Number Input */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-white/60">Registration Number</label>
-                  <input type="text" className="input-field" placeholder="Plate Number" required />
+                  <label className="text-sm font-medium text-white/60">
+                    Registration Number <span className="text-rose-500">* (Auto Uppercase)</span>
+                  </label>
+                  <input 
+                    type="text" 
+                    className="input-field uppercase font-mono font-bold tracking-wider text-amber-400" 
+                    placeholder="Plate Number (e.g. KL53R4949)" 
+                    value={addCarRegistration}
+                    onChange={(e) => setAddCarRegistration(e.target.value.toUpperCase())}
+                    required 
+                  />
                 </div>
+
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-white/60">Franchise Branch</label>
                   {currentUser?.role === 'Super Admin' ? (
@@ -383,10 +491,12 @@ export default function Customers() {
                     />
                   )}
                 </div>
+
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-white/60">KOT / Ticket No.</label>
-                  <input type="text" className="input-field bg-white/5 text-white/60 cursor-not-allowed" value={generatedKot} readOnly />
+                  <input type="text" className="input-field bg-white/5 text-white/60 cursor-not-allowed font-mono font-bold" value={generatedKot} readOnly />
                 </div>
+
                 <div className="space-y-2 md:col-span-2">
                   <label className="text-sm font-medium text-white/60">Payment Collection</label>
                   <select className="input-field bg-dryft-dark">
@@ -396,9 +506,11 @@ export default function Customers() {
                     <option value="upi">Paid - UPI / Online</option>
                   </select>
                 </div>
+
                 <div className="space-y-2 md:col-span-2 border-t border-white/10 pt-4 mt-2">
                   <h3 className="font-bold text-white mb-2">Service & Billing</h3>
                 </div>
+
                 <div className="space-y-2 md:col-span-2">
                   <label className="text-sm font-medium text-white/60">Primary Service</label>
                   <select className="input-field bg-dryft-dark" value={selectedService} onChange={(e) => setSelectedService(e.target.value)}>
@@ -406,6 +518,7 @@ export default function Customers() {
                     <option value="interior_exterior">Interior + Exterior Wash (₹500)</option>
                   </select>
                 </div>
+
                 <div className="space-y-2 md:col-span-2">
                   <label className="text-sm font-medium text-white/60">Vehicle Size Add-on</label>
                   <select className="input-field bg-dryft-dark" value={vehicleType} onChange={(e) => setVehicleType(e.target.value)}>
@@ -414,6 +527,7 @@ export default function Customers() {
                     <option value="mpv">MPV / 7-Seater (+₹{selectedService === 'exterior' ? '100' : '150'})</option>
                   </select>
                 </div>
+
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-white/60">Select Add-on Service</label>
                   <select className="input-field bg-dryft-dark" value={selectedAddon} onChange={(e) => {
@@ -430,10 +544,12 @@ export default function Customers() {
                     <option value="tyre_polish">Permanent Tyre Polish (₹100)</option>
                   </select>
                 </div>
+
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-white/60">Add-on Amount (₹)</label>
                   <input type="number" className="input-field" placeholder={selectedAddon ? `Enter amount (₹${slab.min} - ₹${slab.max})` : "Enter finalized amount..."} min={selectedAddon ? slab.min : undefined} max={selectedAddon ? slab.max : undefined} value={addonAmount} onChange={(e) => setAddonAmount(e.target.value === '' ? '' : Number(e.target.value))} required={!!selectedAddon} />
                 </div>
+
                 <div className="space-y-2 md:col-span-2 grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium text-white/60">Discount Type</label>
@@ -453,13 +569,12 @@ export default function Customers() {
                     </div>
                   )}
                 </div>
+
                 <div className="space-y-2 md:col-span-2">
                   <label className="text-sm font-medium text-white/60">Final Amount (₹)</label>
                   <input type="text" className="input-field bg-emerald-500/10 border-emerald-500/30 text-emerald-400 font-bold" value={`₹${finalTotal.toFixed(2)}`} readOnly />
                 </div>
               </div>
-
-
 
               <div className="space-y-2">
                 <label className="text-sm font-medium text-white/60">Notes</label>
@@ -492,26 +607,63 @@ export default function Customers() {
 
             <form className="space-y-6" onSubmit={(e) => {
               e.preventDefault();
+              const cleanPhone = editPhone.replace(/\D/g, '');
+              if (cleanPhone.length !== 10) {
+                toast.error('Phone number must be exactly 10 digits!');
+                return;
+              }
               toast.success('Customer record updated!');
               setEditingCustomer(null);
             }}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-white/60">Customer Name</label>
-                  <input type="text" className="input-field" defaultValue={editingCustomer.name} required />
+                  <label className="text-sm font-medium text-white/60">Customer Name <span className="text-rose-500">*</span></label>
+                  <input 
+                    type="text" 
+                    className="input-field" 
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    required 
+                  />
                 </div>
+
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-white/60">Phone Number</label>
-                  <input type="text" className="input-field" defaultValue={editingCustomer.phone} required />
+                  <label className="text-sm font-medium text-white/60">Phone Number <span className="text-rose-500">* (10 Digits)</span></label>
+                  <input 
+                    type="text" 
+                    className="input-field font-mono" 
+                    value={editPhone}
+                    onChange={(e) => setEditPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                    maxLength={10}
+                    required 
+                  />
+                  {editPhone && editPhone.length !== 10 && (
+                    <p className="text-[11px] text-amber-400 font-medium">Please enter exactly 10 digits ({editPhone.length}/10)</p>
+                  )}
                 </div>
+
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-white/60">Car Model</label>
-                  <input type="text" className="input-field" defaultValue={editingCustomer.car} required />
+                  <label className="text-sm font-medium text-white/60">Car Model <span className="text-rose-500">*</span></label>
+                  <input 
+                    type="text" 
+                    className="input-field" 
+                    value={editCarModel}
+                    onChange={(e) => setEditCarModel(e.target.value)}
+                    required 
+                  />
                 </div>
+
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-white/60">Registration Number</label>
-                  <input type="text" className="input-field" defaultValue={editingCustomer.plate} required />
+                  <label className="text-sm font-medium text-white/60">Registration Number <span className="text-rose-500">* (Auto Uppercase)</span></label>
+                  <input 
+                    type="text" 
+                    className="input-field uppercase font-mono font-bold tracking-wider text-amber-400" 
+                    value={editCarRegistration}
+                    onChange={(e) => setEditCarRegistration(e.target.value.toUpperCase())}
+                    required 
+                  />
                 </div>
+
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-white/60">Franchise Branch</label>
                   <select className="input-field bg-dryft-dark" defaultValue={editingCustomer.branch}>
@@ -522,7 +674,7 @@ export default function Customers() {
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-white/60">KOT / Ticket No.</label>
-                  <input type="text" className="input-field bg-white/5 text-white/60 cursor-not-allowed" defaultValue={editingCustomer.kot || generatedKot} readOnly />
+                  <input type="text" className="input-field bg-white/5 text-white/60 cursor-not-allowed font-mono font-bold" defaultValue={editingCustomer.kot || generatedKot} readOnly />
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <label className="text-sm font-medium text-white/60">Payment Collection</label>
@@ -613,6 +765,7 @@ export default function Customers() {
           </div>
         </div>
       )}
+
       {/* Complete Service Modal */}
       {completingCustomer && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
@@ -663,7 +816,7 @@ export default function Customers() {
                 </select>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-white/60">Assigned Staff</label>
+                <label className="text-sm font-medium text-white/60">Assign Staff / Operator</label>
                 <select className="input-field bg-dryft-dark" value={completionStaffId} onChange={(e) => setCompletionStaffId(e.target.value)}>
                   <option value="">-- None --</option>
                   {staffList.map(s => (
@@ -672,15 +825,15 @@ export default function Customers() {
                 </select>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-white/60">Final Completion Note (Optional)</label>
-                <textarea className="input-field min-h-[100px]" placeholder="Add any notes on car condition upon handover..." value={completionNotes} onChange={(e) => setCompletionNotes(e.target.value)}></textarea>
+                <label className="text-sm font-medium text-white/60">Completion Notes (Optional)</label>
+                <textarea className="input-field min-h-[80px]" placeholder="e.g. Cleaned & polished ready for pickup" value={completionNotes} onChange={(e) => setCompletionNotes(e.target.value)}></textarea>
               </div>
-              <div className="flex gap-4 pt-4">
-                <button type="button" onClick={() => setCompletingCustomer(null)} className="flex-1 px-4 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-colors">
+              <div className="flex gap-4 pt-2">
+                <button type="button" onClick={() => setCompletingCustomer(null)} disabled={isSubmitting} className="flex-1 px-4 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-colors disabled:opacity-50">
                   Cancel
                 </button>
-                <button type="submit" disabled={isSubmitting} className="flex-1 btn-primary py-3 disabled:opacity-50 disabled:cursor-not-allowed">
-                  {isSubmitting ? 'Processing...' : 'Mark as Finished'}
+                <button type="submit" disabled={isSubmitting} className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 rounded-xl transition-colors disabled:opacity-50">
+                  {isSubmitting ? 'Finalizing...' : 'Mark as Completed'}
                 </button>
               </div>
             </form>
